@@ -1469,6 +1469,12 @@ window.handleAutoCreateBarChange = function() {
 // 4. 描画処理（View）
 // ---------------------------------------------------
 function renderAll() {
+    // ★追加：再描画の前に現在のスクロール位置を記憶する
+    const leftContainer = document.getElementById('left-container');
+    const rightContainer = document.getElementById('right-container');
+    const dailyNotesRight = document.getElementById('daily-notes-right');
+    const savedScrollTop = rightContainer ? rightContainer.scrollTop : 0;
+    const savedScrollLeft = rightContainer ? rightContainer.scrollLeft : 0;
     document.documentElement.style.setProperty('--global-font-family', state.globalFontFamily || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif");
     document.documentElement.style.setProperty('--global-font-size', (state.globalFontSize || 13) + 'px');
 
@@ -1535,6 +1541,18 @@ function renderAll() {
     renderTable(); 
     renderChart(); 
     renderDailyNotes(); 
+
+    // ★追加：再描画が終わった直後にスクロール位置を復元する
+    if (rightContainer) {
+        rightContainer.scrollTop = savedScrollTop;
+        rightContainer.scrollLeft = savedScrollLeft;
+    }
+    if (leftContainer) {
+        leftContainer.scrollTop = savedScrollTop;
+    }
+    if (dailyNotesRight) {
+        dailyNotesRight.scrollLeft = savedScrollLeft;
+    }
 }
 
 function renderDailyNotes() {
@@ -1830,6 +1848,11 @@ function aggregatePeriods(periods) {
 // 【リファクタリング】 カレンダー描画（画面右側）
 // ---------------------------------------------------
 function renderChart() {
+    // ★追加：再描画の前にスクロール位置を記憶する
+    const rightContainer = document.getElementById('right-container');
+    const savedScrollTop = rightContainer ? rightContainer.scrollTop : 0;
+    const savedScrollLeft = rightContainer ? rightContainer.scrollLeft : 0;
+
     const chartArea = document.getElementById('chart-area'); 
     const arrowLayer = document.getElementById('arrow-layer');
     const dStart = new Date(state.displayStart); 
@@ -1883,6 +1906,12 @@ function renderChart() {
     
     // 7. テキストボックスの描画
     drawTextBoxes(chartArea);
+
+    // ★追加：スクロール位置を復元する
+    if (rightContainer) {
+        rightContainer.scrollTop = savedScrollTop;
+        rightContainer.scrollLeft = savedScrollLeft;
+    }
 }
 
 // ---------------------------------------------------
