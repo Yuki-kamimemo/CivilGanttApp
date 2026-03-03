@@ -1,0 +1,20 @@
+# PyInstaller のビルド生成物（.exe関連）を除外
+build/
+dist/
+*.spec
+
+# Python の仮想環境を除外
+# フォルダ名が venv や .venv の場合を想定しています
+venv/
+.venv/
+ENV/
+
+# Python のキャッシュファイルを除外
+__pycache__/
+*.pyc
+
+# ログファイルや一時ファイル
+*.log
+
+# 起動用bat
+run.bat
