@@ -116,21 +116,26 @@
         <div class="modal-content" style="width: 350px;">
             <h3 style="border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">印刷・PDF出力設定</h3>
             <div class="period-form">
-                <p style="font-size: 12px; color: #6c757d; margin-top: 0;">用紙に収めたい期間と、カレンダーの縮小率を設定します。</p>
+                <p style="font-size: 12px; color: #6c757d; margin-top: 0;">アプリ専用の印刷プレビューを開き、1ページに収まるように調整してから印刷します。</p>
                 <label>印刷開始日: <input type="date" id="modal-print-start"></label>
                 <label>印刷終了日: <input type="date" id="modal-print-end"></label>
                 <label>縮小・拡大率: 
                     <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0" style="width: 80px;">
                     <span style="font-size: 12px; font-weight: normal; margin-left: 5px;">(1.0が標準)</span>
                 </label>
+                <label>
+                    <input type="checkbox" id="modal-print-fit" checked>
+                    1ページに自動調整する（縦方向の分割を防止）
+                </label>
             </div>
             <div class="modal-actions" style="margin-top: 25px;">
                 <button type="button" class="cancel" onclick="window.closePrintModal()">キャンセル</button>
-                <button type="button" class="save" onclick="window.executePrint()">印刷画面へ</button>
+                <button type="button" class="save" onclick="window.executePrint()">専用プレビューを開く</button>
             </div>
         </div>
     </div>
 
+    <div id="print-target">
     <div class="top-panel">
         <div class="top-panel-left">
             <div class="project-info">
@@ -307,6 +312,7 @@
             <div id="project-notes" contenteditable="true" onfocus="window.selectInput('notes')" onblur="window.handleNotesChange()" style="width: 100%; height: 100%; box-sizing: border-box; padding: 5px; outline: none; overflow-y: auto;"></div>
         </div>
         
+    </div>
     </div>
 
     <script src="app.js?ver=1"></script>

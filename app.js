@@ -865,12 +865,169 @@ window.openPrintModal = function() {
     document.getElementById('modal-print-start').value = state.displayStart;
     document.getElementById('modal-print-end').value = state.displayEnd;
     document.getElementById('modal-print-zoom').value = state.zoomRatio || 1.0;
+    document.getElementById('modal-print-fit').checked = true;
     document.getElementById('print-modal').style.display = 'flex';
 };
 
 window.closePrintModal = function() {
     document.getElementById('print-modal').style.display = 'none';
 };
+
+function clonePrintTargetWithCurrentValues(target) {
+    const clone = target.cloneNode(true);
+    const sourceFields = target.querySelectorAll('input, textarea, select, [contenteditable="true"]');
+    const cloneFields = clone.querySelectorAll('input, textarea, select, [contenteditable="true"]');
+
+    sourceFields.forEach((field, idx) => {
+        const clonedField = cloneFields[idx];
+        if (!clonedField) return;
+
+        if (field.matches('[contenteditable="true"]')) {
+            clonedField.innerHTML = field.innerHTML;
+            return;
+        }
+
+        if (field.tagName === 'INPUT') {
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                clonedField.checked = field.checked;
+                if (field.checked) clonedField.setAttribute('checked', 'checked');
+                else clonedField.removeAttribute('checked');
+            } else {
+                clonedField.value = field.value;
+                clonedField.setAttribute('value', field.value);
+            }
+            return;
+        }
+
+        if (field.tagName === 'TEXTAREA') {
+            clonedField.value = field.value;
+            clonedField.textContent = field.value;
+            return;
+        }
+
+        if (field.tagName === 'SELECT') {
+            clonedField.value = field.value;
+            [...clonedField.options].forEach(opt => {
+                opt.selected = (opt.value === field.value);
+            });
+        }
+    });
+
+    return clone;
+}
+
+function openCustomPrintPreview(fitToPage) {
+    const printTarget = document.getElementById('print-target');
+    if (!printTarget) {
+        alert('印刷対象の領域が見つかりませんでした。');
+        return;
+    }
+
+    const clonedTarget = clonePrintTargetWithCurrentValues(printTarget);
+    const preview = window.open('', '_blank', 'noopener,noreferrer,width=1600,height=1000');
+    if (!preview) {
+        alert('印刷プレビューを開けませんでした。ポップアップブロックを解除して再試行してください。');
+        return;
+    }
+
+    const contentHtml = clonedTarget.outerHTML;
+    const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工程表 専用印刷プレビュー</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { margin: 0; background: #f1f3f5; }
+    .preview-toolbar {
+      position: sticky; top: 0; z-index: 999;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 10px 16px; border-bottom: 1px solid #ced4da; background: #fff;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .preview-toolbar .hint { font-size: 12px; color: #6c757d; }
+    .sheet-wrap { padding: 16px; }
+    .print-sheet {
+      width: 1577px; height: 1116px; margin: 0 auto; background: #fff;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12); overflow: hidden; position: relative;
+    }
+    .sheet-content {
+      position: absolute; top: 16px; left: 16px;
+      transform-origin: top left;
+      width: max-content;
+      background: #fff;
+    }
+    #print-target { display: block !important; }
+    @media print {
+      @page { size: A3 landscape; margin: 0; }
+      body { background: #fff; }
+      .preview-toolbar { display: none !important; }
+      .sheet-wrap { padding: 0; }
+      .print-sheet { width: 100%; height: 100%; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-toolbar">
+    <strong>専用印刷プレビュー</strong>
+    <label>拡大率 <input id="scaleRange" type="range" min="0.4" max="1.4" step="0.01" value="1" style="width: 180px; vertical-align: middle;"></label>
+    <span id="scaleText">100%</span>
+    <button id="fitBtn" type="button">1ページに再調整</button>
+    <button onclick="window.print()" type="button">印刷する</button>
+    <span class="hint">縦方向があふれる場合は「1ページに再調整」または拡大率を下げてください。</span>
+  </div>
+  <div class="sheet-wrap">
+    <div class="print-sheet" id="printSheet">
+      <div class="sheet-content" id="sheetContent">${contentHtml}</div>
+    </div>
+  </div>
+
+  <script>
+    const sheet = document.getElementById('printSheet');
+    const content = document.getElementById('sheetContent');
+    const range = document.getElementById('scaleRange');
+    const text = document.getElementById('scaleText');
+    const fitBtn = document.getElementById('fitBtn');
+    const fitDefault = ${fitToPage ? 'true' : 'false'};
+    let baseScale = 1;
+
+    function calcFitScale() {
+      const maxW = sheet.clientWidth - 32;
+      const maxH = sheet.clientHeight - 32;
+      const contentW = content.scrollWidth;
+      const contentH = content.scrollHeight;
+      if (!contentW || !contentH) return 1;
+      return Math.min(maxW / contentW, maxH / contentH, 1);
+    }
+
+    function applyScale() {
+      const userScale = parseFloat(range.value) || 1;
+      const finalScale = baseScale * userScale;
+      content.style.transform = 'scale(' + finalScale + ')';
+      text.textContent = Math.round(finalScale * 100) + '%';
+    }
+
+    fitBtn.addEventListener('click', () => {
+      baseScale = calcFitScale();
+      range.value = '1';
+      applyScale();
+    });
+
+    range.addEventListener('input', applyScale);
+
+    window.addEventListener('load', () => {
+      baseScale = fitDefault ? calcFitScale() : 1;
+      applyScale();
+    });
+  <\/script>
+</body>
+</html>`;
+
+    preview.document.open();
+    preview.document.write(html);
+    preview.document.close();
+}
 
 window.executePrint = function() {
     prePrintState = {
@@ -883,6 +1040,7 @@ window.executePrint = function() {
     state.displayStart = document.getElementById('modal-print-start').value;
     state.displayEnd = document.getElementById('modal-print-end').value;
     state.zoomRatio = parseFloat(document.getElementById('modal-print-zoom').value) || 1.0;
+    const fitToPage = document.getElementById('modal-print-fit').checked;
     state.viewRange = 'custom'; 
 
     window.closePrintModal();
@@ -890,7 +1048,7 @@ window.executePrint = function() {
 
     setTimeout(() => {
         const mainContainer = document.querySelector('.main-container');
-        const leftBlock = mainContainer.firstElementChild; 
+        const leftBlock = mainContainer.firstElementChild;
         const notesPane = document.getElementById('notes-pane');
         const projectNotes = document.getElementById('project-notes');
         
@@ -907,7 +1065,7 @@ window.executePrint = function() {
             dailyNotesLeft.style.setProperty('max-width', targetWidth + 'px', 'important');
         }
 
-        window.print();
+        openCustomPrintPreview(fitToPage);
                 
                 setTimeout(() => {
                     if (notesPane) notesPane.style.removeProperty('height');
