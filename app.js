@@ -12,13 +12,26 @@ let copiedTask = null;
 async function fetchNationalHolidays() {
     try {
         const res = await fetch('https://holidays-jp.github.io/api/v1/date.json');
-        if (res.ok) { 
-            window.nationalHolidays = await res.json(); 
-            renderAll(); 
+        if (res.ok) {
+            window.nationalHolidays = await res.json();
+            renderAll();
+        } else {
+            console.warn('祝日データの取得に失敗しました（サーバーエラー）。祝日は稼働日として扱われます。');
+            showHolidayWarning();
         }
-    } catch (e) { 
-        console.error('祝日データの取得に失敗しました。', e); 
+    } catch (e) {
+        console.warn('祝日データの取得に失敗しました（ネットワークエラー）。', e);
+        showHolidayWarning();
     }
+}
+
+function showHolidayWarning() {
+    // 画面上部に警告バナーを表示（邪魔にならないよう数秒で消える）
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#fff3cd; color:#856404; padding:6px 12px; font-size:12px; z-index:9999; text-align:center; border-bottom:1px solid #ffc107;';
+    banner.textContent = '⚠ インターネットに接続できないため、祝日データを取得できませんでした。日本の祝日は稼働日として扱われます。';
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 6000);
 }
 
 // ---------------------------------------------------
@@ -121,7 +134,9 @@ window.saveStateToHistory = function() {
     }
     stateHistory.push(JSON.parse(JSON.stringify(state)));
     if (stateHistory.length > MAX_HISTORY) {
-        stateHistory.shift(); 
+        stateHistory.shift();
+        // shift()で先頭を削除した分、indexは変わらない（常に末尾を指すよう維持）
+        historyIndex = stateHistory.length - 1;
     } else {
         historyIndex++;
     }
@@ -1155,27 +1170,33 @@ window.handleSaveFile = async function() {
 };
 
 window.handleOpenFile = async function() {
-    if (window.pywebview && window.pywebview.api) {
-        const fileContent = await window.pywebview.api.open_file();
-        if (fileContent) {
-            try { applyLoadedData(JSON.parse(fileContent)); } 
-            catch (err) { alert('読み込みに失敗しました。ファイルが壊れている可能性があります。'); }
+    window.openConfirmModal(
+        'ファイルを開く',
+        '現在のデータは破棄されます。保存していない変更は失われますが、よろしいですか？',
+        async function() {
+            if (window.pywebview && window.pywebview.api) {
+                const fileContent = await window.pywebview.api.open_file();
+                if (fileContent) {
+                    try { applyLoadedData(JSON.parse(fileContent)); }
+                    catch (err) { alert('読み込みに失敗しました。ファイルが壊れている可能性があります。'); }
+                }
+            } else {
+                const input = document.createElement('input');
+                input.type = 'file'; input.accept = '.csm';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try { applyLoadedData(JSON.parse(event.target.result)); }
+                        catch (err) { alert('読み込みに失敗しました。'); }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
         }
-    } else {
-        const input = document.createElement('input'); 
-        input.type = 'file'; input.accept = '.csm';
-        input.onchange = (e) => {
-            const file = e.target.files[0]; 
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try { applyLoadedData(JSON.parse(event.target.result)); } 
-                catch (err) { alert('読み込みに失敗しました。'); }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
-    }
+    );
 };
 
 window.handleExportExcel = async function() {
@@ -1439,7 +1460,10 @@ window.deleteCurrentDailyTab = function() {
 window.handleDailyNoteChange = function(dateStr, value) {
     const tabId = state.activeDailyNoteTab;
     if (!state.dailyNotesData[tabId]) state.dailyNotesData[tabId] = {};
-    state.dailyNotesData[tabId][dateStr] = value; 
+    // 内容が変わっていない場合は履歴を保存しない（Undoの無駄遣いを防ぐ）
+    const oldValue = state.dailyNotesData[tabId][dateStr] || '';
+    if (oldValue === value) return;
+    state.dailyNotesData[tabId][dateStr] = value;
     window.saveStateToHistory();
 };
 
@@ -1735,10 +1759,15 @@ function renderTable() {
 
     state.tasks.forEach((task, index) => {
         task.no = index + 1;
-        const tr = document.createElement('tr'); 
-        tr.className = `task-row ${task.collapsed ? 'collapsed' : ''}`; 
-        tr.dataset.taskId = task.id; 
-        tr.setAttribute('oncontextmenu', `window.handleRowContextMenu(event, '${task.id}', '${task.no}', '${task.koshu}')`);
+        const tr = document.createElement('tr');
+        tr.className = `task-row ${task.collapsed ? 'collapsed' : ''}`;
+        tr.dataset.taskId = task.id;
+        // data属性にIDを保持してaddEventListenerで呼ぶ（工種名の特殊文字対策）
+        tr.addEventListener('contextmenu', (e) => {
+            if (e.target.tagName === 'INPUT' && e.target.type !== 'color') return;
+            const title = `行アクション (No.${task.no} ${task.koshu || '名称未設定'})`;
+            window.showContextMenu(e, title, 'task', { taskId: task.id });
+        });
 
         const maxRow = task.periods.reduce((max, p) => Math.max(max, p.displayRow || 0), 0);
         const numRows = maxRow + 1;
@@ -1761,8 +1790,8 @@ function renderTable() {
             html += `
             <td class="task-koshu-cell" rowspan="${koshuRowspans[index]}">
                 <div class="task-name-header">
-                    <input type="text" class="task-koshu" placeholder="工種" value="${task.koshu}" style="${kCss}" 
-                           onfocus="window.selectInput('cell', '${task.id}', 'koshu')" 
+                    <input type="text" class="task-koshu" placeholder="工種" style="${kCss}"
+                           onfocus="window.selectInput('cell', '${task.id}', 'koshu')"
                            onchange="window.handleTaskDetailChange('${task.id}', 'koshu', this.value)">
                 </div>
             </td>`;
@@ -1771,8 +1800,8 @@ function renderTable() {
         if (shubetsuRowspans[index] > 0) {
             html += `
             <td class="task-shubetsu-cell" rowspan="${shubetsuRowspans[index]}">
-                <input type="text" class="task-shubetsu" placeholder="種別" value="${task.shubetsu}" style="${shCss}" 
-                       onfocus="window.selectInput('cell', '${task.id}', 'shubetsu')" 
+                <input type="text" class="task-shubetsu" placeholder="種別" style="${shCss}"
+                       onfocus="window.selectInput('cell', '${task.id}', 'shubetsu')"
                        onchange="window.handleTaskDetailChange('${task.id}', 'shubetsu', this.value)">
             </td>`;
         }
@@ -1780,8 +1809,8 @@ function renderTable() {
         html += `
             <td class="task-saibetsu-cell">
                 <div class="task-name-container">
-                    <input type="text" class="task-saibetsu" placeholder="細別・規格" value="${task.saibetsu}" style="${saCss}" 
-                           onfocus="window.selectInput('cell', '${task.id}', 'saibetsu')" 
+                    <input type="text" class="task-saibetsu" placeholder="細別・規格" style="${saCss}"
+                           onfocus="window.selectInput('cell', '${task.id}', 'saibetsu')"
                            onchange="window.handleTaskDetailChange('${task.id}', 'saibetsu', this.value)">
                 </div>
             </td>
@@ -1820,7 +1849,14 @@ function renderTable() {
             html += `</div></td>`;
         });
         
-        tr.innerHTML = html; 
+        tr.innerHTML = html;
+        // input.value はDOM経由で設定（特殊文字・引用符を含む文字列でも正しく動作させるため）
+        const koshuInput = tr.querySelector('.task-koshu');
+        if (koshuInput) koshuInput.value = task.koshu;
+        const shubetsuInput = tr.querySelector('.task-shubetsu');
+        if (shubetsuInput) shubetsuInput.value = task.shubetsu;
+        const saibetsuInput = tr.querySelector('.task-saibetsu');
+        if (saibetsuInput) saibetsuInput.value = task.saibetsu;
         tbody.appendChild(tr);
     });
 }
