@@ -872,7 +872,7 @@ window.closePrintModal = function() {
     document.getElementById('print-modal').style.display = 'none';
 };
 
-window.executePrint = function() {
+window.executePrint = async function() {
     prePrintState = {
         displayStart: state.displayStart,
         displayEnd: state.displayEnd,
@@ -883,66 +883,91 @@ window.executePrint = function() {
     state.displayStart = document.getElementById('modal-print-start').value;
     state.displayEnd = document.getElementById('modal-print-end').value;
     state.zoomRatio = parseFloat(document.getElementById('modal-print-zoom').value) || 1.0;
-    state.viewRange = 'custom'; 
+    state.viewRange = 'custom';
 
     window.closePrintModal();
-    renderAll(); 
+    renderAll();
 
-    setTimeout(() => {
-        const mainContainer = document.querySelector('.main-container');
-        const leftBlock = mainContainer.firstElementChild; 
-        const notesPane = document.getElementById('notes-pane');
-        const projectNotes = document.getElementById('project-notes');
-        
-        const targetHeight = leftBlock.offsetHeight;
-        if (notesPane) notesPane.style.setProperty('height', targetHeight + 'px', 'important');
-        if (projectNotes) projectNotes.style.setProperty('height', 'calc(' + targetHeight + 'px - 33px)', 'important');
-        
-        const leftPane = document.getElementById('left-pane');
-        const dailyNotesLeft = document.getElementById('daily-notes-left');
-        if (leftPane && dailyNotesLeft) {
-            const targetWidth = leftPane.classList.contains('collapsed-view') ? 350 : 520;
-            dailyNotesLeft.style.setProperty('width', targetWidth + 'px', 'important');
-            dailyNotesLeft.style.setProperty('min-width', targetWidth + 'px', 'important');
-            dailyNotesLeft.style.setProperty('max-width', targetWidth + 'px', 'important');
-        }
+    try {
+        await new Promise(resolve => setTimeout(resolve, 80));
+        window.executeCustomPrintLayout();
+    } finally {
+        state.displayStart = prePrintState.displayStart;
+        state.displayEnd = prePrintState.displayEnd;
+        state.zoomRatio = prePrintState.zoomRatio;
+        state.viewRange = prePrintState.viewRange;
+        renderAll();
+    }
+};
 
-        window.print();
-                
-                setTimeout(() => {
-                    if (notesPane) notesPane.style.removeProperty('height');
-                    if (projectNotes) projectNotes.style.removeProperty('height');
-                    
-                    if (dailyNotesLeft) {
-                        dailyNotesLeft.style.removeProperty('width');
-                        dailyNotesLeft.style.removeProperty('min-width');
-                        dailyNotesLeft.style.removeProperty('max-width');
-                        
-                        // ★追加: レイアウト崩れを防ぐため、上の表の幅に合わせて強制的に再設定する
-                        if (leftPane) {
-                            const currentWidth = leftPane.offsetWidth;
-                            dailyNotesLeft.style.width = currentWidth + 'px';
-                            dailyNotesLeft.style.minWidth = currentWidth + 'px';
-                        }
-                    }
+window.executeCustomPrintLayout = function() {
+    const topPanel = document.querySelector('.top-panel');
+    const mainContainer = document.querySelector('.main-container');
+    if (!topPanel || !mainContainer) {
+        alert('印刷対象のレイアウト取得に失敗しました。');
+        return;
+    }
 
-                    state.displayStart = prePrintState.displayStart;
-                    state.displayEnd = prePrintState.displayEnd;
-                    state.zoomRatio = prePrintState.zoomRatio;
-                    state.viewRange = prePrintState.viewRange;
-                    renderAll(); 
-                    
-                    // ★追加: 印刷画面から戻った際に、左右のスクロール位置を同期させる
-                    setTimeout(() => {
-                        const rightContainer = document.getElementById('right-container');
-                        const dailyNotesRight = document.getElementById('daily-notes-right');
-                        if (rightContainer && dailyNotesRight) {
-                            dailyNotesRight.scrollLeft = rightContainer.scrollLeft;
-                        }
-                    }, 50);
-                }, 500); 
-            }, 500); 
-        };
+    const contentWidth = Math.ceil(Math.max(topPanel.scrollWidth, mainContainer.scrollWidth));
+    const contentHeight = Math.ceil(topPanel.scrollHeight + mainContainer.scrollHeight);
+
+    // A3横（96dpi相当）から余白を引いた印刷可能領域
+    const printableWidth = 1500;
+    const printableHeight = 1020;
+    const fitScale = Math.min(printableWidth / contentWidth, printableHeight / contentHeight);
+    const userScale = parseFloat(document.getElementById('modal-print-zoom').value) || 1.0;
+    const finalScale = Math.max(0.1, Math.min(3.0, fitScale * userScale));
+
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    document.body.appendChild(printFrame);
+
+    const doc = printFrame.contentDocument || printFrame.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>工程表印刷</title>
+<style>
+    @page { size: A3 landscape; margin: 10mm; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: sans-serif; }
+    .print-stage { width: ${contentWidth}px; transform: scale(${finalScale}); transform-origin: top left; }
+    .print-hide { display: none !important; }
+    .menubar, .modal-overlay, .add-row-btn, .add-period-btn, .del-period-btn, .toggle-btn, .resize-handle, .link-handle { display: none !important; }
+    .top-panel { box-shadow: none !important; }
+    #right-container, #daily-notes-right, #project-notes { overflow: hidden !important; }
+</style>
+</head>
+<body>
+<div class="print-stage">
+${topPanel.outerHTML}
+${mainContainer.outerHTML}
+</div>
+</body>
+</html>`);
+    doc.close();
+
+    const cleanup = () => {
+        setTimeout(() => {
+            if (printFrame && printFrame.parentNode) printFrame.parentNode.removeChild(printFrame);
+        }, 100);
+    };
+
+    printFrame.onload = () => {
+        const win = printFrame.contentWindow;
+        win.onafterprint = cleanup;
+        win.focus();
+        win.print();
+        setTimeout(cleanup, 1500);
+    };
+};
 
 // ---------------------------------------------------
 // コンテキストメニュー制御
