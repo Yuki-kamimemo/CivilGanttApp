@@ -865,12 +865,131 @@ window.openPrintModal = function() {
     document.getElementById('modal-print-start').value = state.displayStart;
     document.getElementById('modal-print-end').value = state.displayEnd;
     document.getElementById('modal-print-zoom').value = state.zoomRatio || 1.0;
+    document.getElementById('modal-print-fit').checked = true;
     document.getElementById('print-modal').style.display = 'flex';
 };
 
 window.closePrintModal = function() {
     document.getElementById('print-modal').style.display = 'none';
 };
+
+function clonePrintTargetWithCurrentValues(target) {
+    const clone = target.cloneNode(true);
+    const sourceFields = target.querySelectorAll('input, textarea, select, [contenteditable="true"]');
+    const cloneFields = clone.querySelectorAll('input, textarea, select, [contenteditable="true"]');
+
+    sourceFields.forEach((field, idx) => {
+        const clonedField = cloneFields[idx];
+        if (!clonedField) return;
+
+        if (field.matches('[contenteditable="true"]')) {
+            clonedField.innerHTML = field.innerHTML;
+            return;
+        }
+
+        if (field.tagName === 'INPUT') {
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                clonedField.checked = field.checked;
+                if (field.checked) clonedField.setAttribute('checked', 'checked');
+                else clonedField.removeAttribute('checked');
+            } else {
+                clonedField.value = field.value;
+                clonedField.setAttribute('value', field.value);
+            }
+            return;
+        }
+
+        if (field.tagName === 'TEXTAREA') {
+            clonedField.value = field.value;
+            clonedField.textContent = field.value;
+            return;
+        }
+
+        if (field.tagName === 'SELECT') {
+            clonedField.value = field.value;
+            [...clonedField.options].forEach(opt => {
+                opt.selected = (opt.value === field.value);
+            });
+        }
+    });
+
+    return clone;
+}
+
+let previewBaseScale = 1;
+
+function calculatePreviewFitScale() {
+    const sheet = document.getElementById('preview-sheet');
+    const content = document.getElementById('preview-sheet-content');
+    if (!sheet || !content) return 1;
+
+    const maxW = sheet.clientWidth - 32;
+    const maxH = sheet.clientHeight - 32;
+    const contentW = content.scrollWidth;
+    const contentH = content.scrollHeight;
+    if (!contentW || !contentH) return 1;
+
+    return Math.min(maxW / contentW, maxH / contentH, 1);
+}
+
+function applyPreviewScale() {
+    const content = document.getElementById('preview-sheet-content');
+    const scaleRange = document.getElementById('preview-scale-range');
+    const scaleText = document.getElementById('preview-scale-text');
+    if (!content || !scaleRange || !scaleText) return;
+
+    const userScale = parseFloat(scaleRange.value) || 1;
+    const finalScale = previewBaseScale * userScale;
+    content.style.transform = 'scale(' + finalScale + ')';
+    scaleText.textContent = Math.round(finalScale * 100) + '%';
+}
+
+window.refitCustomPreview = function() {
+    previewBaseScale = calculatePreviewFitScale();
+    const scaleRange = document.getElementById('preview-scale-range');
+    if (scaleRange) scaleRange.value = '1';
+    applyPreviewScale();
+};
+
+window.closeCustomPrintPreview = function() {
+    document.body.classList.remove('preview-open');
+    const content = document.getElementById('preview-sheet-content');
+    if (content) content.innerHTML = '';
+};
+
+window.printFromCustomPreview = function() {
+    if (!document.body.classList.contains('preview-open')) return;
+    window.print();
+};
+
+function openCustomPrintPreview(fitToPage) {
+    const printTarget = document.getElementById('print-target');
+    const previewContent = document.getElementById('preview-sheet-content');
+    const scaleRange = document.getElementById('preview-scale-range');
+    if (!printTarget || !previewContent || !scaleRange) {
+        alert('印刷プレビューの初期化に失敗しました。');
+        return;
+    }
+
+    const clonedTarget = clonePrintTargetWithCurrentValues(printTarget);
+    previewContent.innerHTML = '';
+    previewContent.appendChild(clonedTarget);
+
+    document.body.classList.add('preview-open');
+
+    setTimeout(() => {
+        previewBaseScale = fitToPage ? calculatePreviewFitScale() : 1;
+        scaleRange.value = '1';
+        applyPreviewScale();
+    }, 30);
+}
+
+function initializeCustomPrintPreview() {
+    const scaleRange = document.getElementById('preview-scale-range');
+    if (scaleRange) {
+        scaleRange.addEventListener('input', applyPreviewScale);
+    }
+}
 
 window.executePrint = function() {
     prePrintState = {
@@ -883,6 +1002,7 @@ window.executePrint = function() {
     state.displayStart = document.getElementById('modal-print-start').value;
     state.displayEnd = document.getElementById('modal-print-end').value;
     state.zoomRatio = parseFloat(document.getElementById('modal-print-zoom').value) || 1.0;
+    const fitToPage = document.getElementById('modal-print-fit').checked;
     state.viewRange = 'custom'; 
 
     window.closePrintModal();
@@ -890,7 +1010,7 @@ window.executePrint = function() {
 
     setTimeout(() => {
         const mainContainer = document.querySelector('.main-container');
-        const leftBlock = mainContainer.firstElementChild; 
+        const leftBlock = mainContainer.firstElementChild;
         const notesPane = document.getElementById('notes-pane');
         const projectNotes = document.getElementById('project-notes');
         
@@ -907,7 +1027,7 @@ window.executePrint = function() {
             dailyNotesLeft.style.setProperty('max-width', targetWidth + 'px', 'important');
         }
 
-        window.print();
+        openCustomPrintPreview(fitToPage);
                 
                 setTimeout(() => {
                     if (notesPane) notesPane.style.removeProperty('height');
@@ -2503,5 +2623,6 @@ function setupTableResizing() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(setupTableResizing, 100); 
+    setTimeout(setupTableResizing, 100);
+    initializeCustomPrintPreview();
 });

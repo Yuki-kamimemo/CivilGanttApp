@@ -116,21 +116,26 @@
         <div class="modal-content" style="width: 350px;">
             <h3 style="border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">印刷・PDF出力設定</h3>
             <div class="period-form">
-                <p style="font-size: 12px; color: #6c757d; margin-top: 0;">用紙に収めたい期間と、カレンダーの縮小率を設定します。</p>
+                <p style="font-size: 12px; color: #6c757d; margin-top: 0;">アプリ専用の印刷プレビューを開き、1ページに収まるように調整してから印刷します。</p>
                 <label>印刷開始日: <input type="date" id="modal-print-start"></label>
                 <label>印刷終了日: <input type="date" id="modal-print-end"></label>
                 <label>縮小・拡大率: 
                     <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0" style="width: 80px;">
                     <span style="font-size: 12px; font-weight: normal; margin-left: 5px;">(1.0が標準)</span>
                 </label>
+                <label>
+                    <input type="checkbox" id="modal-print-fit" checked>
+                    1ページに自動調整する（縦方向の分割を防止）
+                </label>
             </div>
             <div class="modal-actions" style="margin-top: 25px;">
                 <button type="button" class="cancel" onclick="window.closePrintModal()">キャンセル</button>
-                <button type="button" class="save" onclick="window.executePrint()">印刷画面へ</button>
+                <button type="button" class="save" onclick="window.executePrint()">専用プレビューを開く</button>
             </div>
         </div>
     </div>
 
+    <div id="print-target">
     <div class="top-panel">
         <div class="top-panel-left">
             <div class="project-info">
@@ -308,6 +313,27 @@
         </div>
         
     </div>
+    </div>
+
+    <div id="in-app-print-preview" class="print-preview-overlay">
+        <div class="preview-toolbar print-hide">
+            <strong>専用印刷プレビュー</strong>
+            <label>拡大率
+                <input id="preview-scale-range" type="range" min="0.4" max="1.4" step="0.01" value="1" style="width: 180px; vertical-align: middle;">
+            </label>
+            <span id="preview-scale-text">100%</span>
+            <button type="button" onclick="window.refitCustomPreview()">1ページに再調整</button>
+            <button type="button" onclick="window.printFromCustomPreview()">印刷する</button>
+            <button type="button" onclick="window.closeCustomPrintPreview()">閉じる</button>
+            <span class="preview-hint">縦方向があふれる場合は「1ページに再調整」または拡大率を下げてください。</span>
+        </div>
+        <div class="preview-sheet-wrap">
+            <div class="preview-sheet" id="preview-sheet">
+                <div class="preview-sheet-content" id="preview-sheet-content"></div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="app.js?ver=1"></script>
 </body>
