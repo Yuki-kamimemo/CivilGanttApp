@@ -1,0 +1,410 @@
+{
+  "projectName": "令和7年度 一般県道○○線 道路改良工事",
+  "companyName": "株式会社○○建設",
+  "viewRange": "custom",
+  "viewScale": "day",
+  "projectStart": "2026-04-01",
+  "projectEnd": "2026-09-30",
+  "displayStart": "2026-04-01",
+  "displayEnd": "2026-09-30",
+  "notes": "<div>【施工上の留意事項】</div><div>・工事区間の通行確保を最優先とする</div><div>・雨天時は土工作業を中止すること</div><div>・安全管理責任者を常駐させること</div>",
+  "notesCollapsed": false,
+  "zoomRatio": 1,
+  "dailyNoteTabs": [
+    {
+      "id": "tab_general",
+      "name": "作業全般・天候"
+    },
+    {
+      "id": "tab_safety",
+      "name": "安全管理・行事"
+    }
+  ],
+  "activeDailyNoteTab": "tab_general",
+  "dailyNotesData": {
+    "tab_general": {
+      "2026-04": "4月：準備工・仮設工",
+      "2026-05": "5月：土工・路体盛土",
+      "2026-06": "6月：排水工・構造物工",
+      "2026-07": "7月：路盤工",
+      "2026-08": "8月：舗装工",
+      "2026-09": "9月：付帯工・後片付け"
+    },
+    "tab_safety": {
+      "2026-04": "安全大会：4/7（火）",
+      "2026-06": "安全パトロール：6/15（月）",
+      "2026-08": "安全パトロール：8/17（月）",
+      "2026-09": "竣工検査：9/25（金）"
+    }
+  },
+  "holidays": {
+    "sundays": true,
+    "saturdays": true,
+    "nationalHolidays": true,
+    "custom": [
+      "2026-08-13",
+      "2026-08-14",
+      "2026-08-15"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "t01",
+      "no": 1,
+      "koshu": "準備工",
+      "shubetsu": "",
+      "saibetsu": "",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p01",
+          "dep": "",
+          "start": "2026-04-01",
+          "end": "2026-04-10",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "93hbw9n6g",
+          "dep": "",
+          "start": "2026-04-03",
+          "end": "2026-04-14",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "t02",
+      "no": 2,
+      "koshu": "仮設工",
+      "shubetsu": "仮設道路",
+      "saibetsu": "L=200m",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p02",
+          "dep": "p01",
+          "start": "2026-04-13",
+          "end": "2026-04-24",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "sb26030gb",
+          "dep": "",
+          "start": "2026-04-16",
+          "end": "2026-04-27",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "t03",
+      "no": 3,
+      "koshu": "仮設工",
+      "shubetsu": "仮設防護柵",
+      "saibetsu": "H=1.2m L=150m",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p03",
+          "dep": "p01",
+          "start": "2026-04-13",
+          "end": "2026-04-30",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "0sh1j2ykn",
+          "dep": "",
+          "start": "2026-04-17",
+          "end": "2026-04-27",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "t04",
+      "no": 4,
+      "koshu": "土工",
+      "shubetsu": "切土工",
+      "saibetsu": "V=3,500m³",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p04a",
+          "dep": "p02",
+          "start": "2026-04-27",
+          "end": "2026-05-22",
+          "progress": 100,
+          "color": "#eab308",
+          "displayRow": 0
+        },
+        {
+          "pid": "p04b",
+          "dep": "p04a",
+          "start": "2026-05-25",
+          "end": "2026-06-12",
+          "progress": 80,
+          "color": "#f97316",
+          "displayRow": 1
+        },
+        {
+          "pid": "hbbyhhwpe",
+          "dep": "",
+          "start": "2026-04-28",
+          "end": "2026-05-22",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 2
+        }
+      ]
+    },
+    {
+      "id": "t05",
+      "no": 5,
+      "koshu": "土工",
+      "shubetsu": "盛土工",
+      "saibetsu": "V=2,800m³",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p05",
+          "dep": "p04a",
+          "start": "2026-05-11",
+          "end": "2026-06-19",
+          "progress": 60,
+          "color": "#eab308",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t06",
+      "no": 6,
+      "koshu": "排水工",
+      "shubetsu": "側溝工",
+      "saibetsu": "U形300 L=180m",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p06",
+          "dep": "p05",
+          "start": "2026-06-01",
+          "end": "2026-06-30",
+          "progress": 40,
+          "color": "#06b6d4",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t07",
+      "no": 7,
+      "koshu": "排水工",
+      "shubetsu": "集水桝工",
+      "saibetsu": "L形集水桝 N=8箇所",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p07",
+          "dep": "p06",
+          "start": "2026-06-15",
+          "end": "2026-07-17",
+          "progress": 20,
+          "color": "#06b6d4",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t08",
+      "no": 8,
+      "koshu": "構造物工",
+      "shubetsu": "擁壁工",
+      "saibetsu": "重力式 H=3.0m L=60m",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p08",
+          "dep": "p04b",
+          "start": "2026-06-22",
+          "end": "2026-08-07",
+          "progress": 0,
+          "color": "#8b5cf6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t09",
+      "no": 9,
+      "koshu": "路盤工",
+      "shubetsu": "下層路盤工",
+      "saibetsu": "t=30cm A=3,600m²",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p09",
+          "dep": "p05",
+          "start": "2026-07-01",
+          "end": "2026-07-31",
+          "progress": 0,
+          "color": "#a3e635",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t10",
+      "no": 10,
+      "koshu": "路盤工",
+      "shubetsu": "上層路盤工",
+      "saibetsu": "t=15cm A=3,600m²",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p10",
+          "dep": "p09",
+          "start": "2026-08-03",
+          "end": "2026-08-21",
+          "progress": 0,
+          "color": "#a3e635",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t11",
+      "no": 11,
+      "koshu": "舗装工",
+      "shubetsu": "基層工",
+      "saibetsu": "密粒13 t=5cm A=3,600m²",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p11",
+          "dep": "p10",
+          "start": "2026-08-24",
+          "end": "2026-09-04",
+          "progress": 0,
+          "color": "#64748b",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t12",
+      "no": 12,
+      "koshu": "舗装工",
+      "shubetsu": "表層工",
+      "saibetsu": "密粒12.5F t=3cm A=3,600m²",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p12",
+          "dep": "p11",
+          "start": "2026-09-07",
+          "end": "2026-09-18",
+          "progress": 0,
+          "color": "#64748b",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t13",
+      "no": 13,
+      "koshu": "付帯工",
+      "shubetsu": "区画線工",
+      "saibetsu": "白線 L=720m",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p13",
+          "dep": "p12",
+          "start": "2026-09-22",
+          "end": "2026-09-25",
+          "progress": 0,
+          "color": "#ec4899",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "t14",
+      "no": 14,
+      "koshu": "仮設撤去",
+      "shubetsu": "仮設道路・防護柵撤去",
+      "saibetsu": "",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "styles": {},
+      "periods": [
+        {
+          "pid": "p14",
+          "dep": "p13",
+          "start": "2026-09-25",
+          "end": "2026-09-30",
+          "progress": 0,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    }
+  ],
+  "texts": [],
+  "shapes": [],
+  "globalFontFamily": "'Meiryo', sans-serif",
+  "globalFontSize": 13,
+  "autoCreateBar": true
+}
