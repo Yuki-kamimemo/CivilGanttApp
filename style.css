@@ -1,822 +1,1562 @@
-    body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: #f8f9fa; 
-}
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: #f8f9fa;
+    }
 
-/* -------------------------------------
+    /* -------------------------------------
+    ユーティリティ・汎用クラス
+    ------------------------------------- */
+    .holiday-warning-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #fff3cd;
+        color: #856404;
+        padding: 6px 12px;
+        font-size: 12px;
+        z-index: 9999;
+        text-align: center;
+        border-bottom: 1px solid #ffc107;
+        transition: opacity 0.5s ease;
+    }
+
+    /* -------------------------------------
     メニューバー・モーダル関連
     ------------------------------------- */
-.menubar {
-    background-color: #e9ecef;
-    border-bottom: 1px solid #dee2e6;
-    padding: 2px 10px;
-    display: flex;
-    font-size: 13px;
-    z-index: 30;
-    color: #495057;
-}
-.menu-item {
-    position: relative;
-    padding: 6px 12px;
-    cursor: pointer;
-    user-select: none;
-    border-radius: 3px;
-}
-.menu-item:hover {
-    background-color: #dee2e6;
-}
-.dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #ffffff;
-    min-width: 160px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    z-index: 40;
-    padding: 4px 0;
-}
-.dropdown-content div {
-    padding: 8px 16px;
-    cursor: pointer;
-    color: #212529;
-}
-.dropdown-content div:hover:not(.disabled) {
-    background-color: #f8f9fa;
-}
-.menu-item:hover .dropdown-content {
-    display: block;
-}
-.dropdown-content div.disabled {
-    color: #adb5bd;
-    cursor: not-allowed;
-    background-color: transparent;
-}
+    .menubar {
+        background-color: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        padding: 2px 10px;
+        display: flex;
+        font-size: 13px;
+        z-index: 30;
+        color: #495057;
+    }
 
-.context-menu {
-    display: none;
-    position: fixed;
-    background: white;
-    border: 1px solid #ced4da;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    z-index: 2000;
-    padding: 5px 0;
-    border-radius: 4px;
-    min-width: 160px;
-}
-.context-menu div.menu-action-item {
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #212529;
-}
-.context-menu div.menu-action-item:hover:not(.disabled) {
-    background-color: #f8f9fa;
-}
-.context-menu div.menu-action-item.disabled {
-    color: #adb5bd;
-    cursor: not-allowed;
-}
-.context-menu .delete-action {
-    color: #dc3545;
-    font-weight: bold;
-}
-.context-menu .delete-action:hover {
-    background-color: #fff1f2;
-}
+    .menu-item {
+        position: relative;
+        padding: 6px 12px;
+        cursor: pointer;
+        user-select: none;
+        border-radius: 3px;
+    }
 
-.modal-overlay {
-    display: none; 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(0,0,0,0.5); 
-    z-index: 3000; 
-    justify-content: center; 
-    align-items: center; 
-}
-.modal-content {
-    background: white; 
-    padding: 20px; 
-    border-radius: 6px; 
-    width: 350px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
-    font-size: 14px; 
-}
-.modal-content h3 {
-    margin-top: 0; 
-    margin-bottom: 15px; 
-    color: #343a40; 
-    border-bottom: 1px solid #dee2e6; 
-    padding-bottom: 10px; 
-}
-.modal-actions {
-    margin-top: 20px; 
-    display: flex; 
-    justify-content: flex-end; 
-    gap: 10px; 
-}
-.modal-actions button.save {
-    background: #0d6efd; 
-    color: white; 
-    border: none; 
-    padding: 6px 15px; 
-    border-radius: 4px; 
-    cursor: pointer; 
-}
-.modal-actions button.save:hover { background: #0b5ed7; }
-.modal-actions button.cancel {
-    background: #e9ecef; 
-    color: #495057; 
-    border: none; 
-    padding: 6px 15px; 
-    border-radius: 4px; 
-    cursor: pointer; 
-}
-.modal-actions button.cancel:hover { background: #dde2e6; }
+    .menu-item:hover {
+        background-color: #dee2e6;
+    }
 
-/* 休日設定モーダル専用 */
-.holiday-settings label { display: block; margin-bottom: 8px; cursor: pointer; }
-.custom-holidays { margin-top: 15px; border-top: 1px solid #dee2e6; padding-top: 15px; }
-.custom-holiday-input { display: flex; gap: 10px; margin-bottom: 10px; }
-.custom-holiday-input input { flex: 1; padding: 4px; border: 1px solid #ced4da; border-radius: 4px; }
-.custom-holiday-input button { background: #6c757d; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
-.holiday-list { max-height: 120px; overflow-y: auto; border: 1px solid #dee2e6; padding: 0; margin: 0; list-style: none; border-radius: 4px; }
-.holiday-list li { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid #f8f9fa; }
-.holiday-list li button { color: #dc3545; background: none; border: none; cursor: pointer; font-weight: bold; }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #ffffff;
+        min-width: 160px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        z-index: 40;
+        padding: 4px 0;
+    }
 
-/* 期間編集モーダル専用 */
-.period-form { display: flex; flex-direction: column; gap: 12px; }
-.period-form label { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #495057; }
-.period-form input { width: 180px; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; font-family: inherit; font-size: 13px; }
-.period-form input[type="color"] { padding: 2px; height: 32px; cursor: pointer; }
-.period-form .hint-text { font-size: 11px; color: #6c757d; margin-top: -8px; text-align: right; }
+    .dropdown-content div {
+        padding: 8px 16px;
+        cursor: pointer;
+        color: #212529;
+    }
 
-/* -------------------------------------
+    .dropdown-content div:hover:not(.disabled) {
+        background-color: #f8f9fa;
+    }
+
+    .menu-item:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropdown-content div.disabled {
+        color: #adb5bd;
+        cursor: not-allowed;
+        background-color: transparent;
+    }
+
+    .context-menu {
+        display: none;
+        position: fixed;
+        background: white;
+        border: 1px solid #ced4da;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        z-index: 2000;
+        padding: 5px 0;
+        border-radius: 4px;
+        min-width: 160px;
+    }
+
+    .context-menu div.menu-action-item {
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #212529;
+    }
+
+    .context-menu div.menu-action-item:hover:not(.disabled) {
+        background-color: #f8f9fa;
+    }
+
+    .context-menu div.menu-action-item.disabled {
+        color: #adb5bd;
+        cursor: not-allowed;
+    }
+
+    .context-menu .delete-action {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .context-menu .delete-action:hover {
+        background-color: #fff1f2;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        width: 350px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        font-size: 14px;
+    }
+
+    .modal-content h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #343a40;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 10px;
+    }
+
+    .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .modal-actions button.save {
+        background: #0d6efd;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .modal-actions button.save:hover {
+        background: #0b5ed7;
+    }
+
+    .modal-actions button.cancel {
+        background: #e9ecef;
+        color: #495057;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .modal-actions button.cancel:hover {
+        background: #dde2e6;
+    }
+
+    /* 休日設定モーダル専用 */
+    .holiday-settings label {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+    .custom-holidays {
+        margin-top: 15px;
+        border-top: 1px solid #dee2e6;
+        padding-top: 15px;
+    }
+
+    .custom-holiday-input {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .custom-holiday-input input {
+        flex: 1;
+        padding: 4px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .custom-holiday-input button {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .holiday-list {
+        max-height: 120px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        border-radius: 4px;
+    }
+
+    .holiday-list li {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 10px;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .holiday-list li button {
+        color: #dc3545;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    /* 期間編集モーダル専用 */
+    .period-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .period-form label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .period-form input {
+        width: 180px;
+        padding: 6px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 13px;
+    }
+
+    .period-form input[type="color"] {
+        padding: 2px;
+        height: 32px;
+        cursor: pointer;
+    }
+
+    .period-form .hint-text {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: -8px;
+        text-align: right;
+    }
+
+    /* -------------------------------------
     上部のコントロールパネル
     ------------------------------------- */
-.top-panel {
-    background: #ffffff; 
-    border-bottom: 1px solid #dee2e6;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    z-index: 20;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 10px 20px;
-}
-.top-panel-left {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.project-info, .header-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap; 
-}
-.project-info label, .header-controls label { 
-    font-weight: bold; color: #495057; font-size: 14px; 
-    display: flex; align-items: center;
-}
-.project-info input, .header-controls input { 
-    padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; 
-}
-.header-controls select {
-    padding: 4px; border: 1px solid #ced4da; border-radius: 4px; margin-right: 10px; margin-left: 5px;
-}
-.project-info input {
-    width: 300px; 
-}
-.shift-btn {
-    background: #ffffff;
-    border: 1px solid #ced4da;
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    color: #495057;
-    font-weight: bold;
-    transition: all 0.2s;
-}
-.shift-btn:hover {
-    background: #e9ecef;
-}
+    .top-panel {
+        background: #ffffff;
+        border-bottom: 1px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        z-index: 20;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 10px 20px;
+    }
 
-/* ★追加：描画ツールボタンのデザイン */
-.tool-btn {
-    background: #ffffff;
-    border: 1px solid #ced4da;
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    color: #495057;
-    font-size: 13px;
-    transition: all 0.2s;
-}
-.tool-btn:hover { background: #e9ecef; }
-.tool-btn.active {
-    background: #0d6efd;
-    color: #ffffff;
-    border-color: #0d6efd;
-    font-weight: bold;
-}
+    .top-panel-left {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
-.stamp-container {
-    display: flex;
-    align-items: flex-start;
-    margin-left: 20px;
-}
-.stamp-box {
-    display: grid;
-    grid-template-columns: 70px 70px;
-    grid-template-rows: auto 70px;
-    background-color: #ffffff;
-    border-top: 1px solid #495057;
-    border-left: 1px solid #495057;
-}
-.stamp-title, .stamp-space {
-    border-right: 1px solid #495057;
-    border-bottom: 1px solid #495057;
-    box-sizing: border-box;
-}
-.stamp-title {
-    font-size: 11px;
-    color: #495057;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4px 0;
-    letter-spacing: -0.5px;
-    white-space: nowrap;
-}
+    .project-info,
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
 
-/* -------------------------------------
+    .project-info label,
+    .header-controls label {
+        font-weight: bold;
+        color: #495057;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    .project-info input,
+    .header-controls input {
+        padding: 4px 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .header-controls select {
+        padding: 4px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        margin-right: 10px;
+        margin-left: 5px;
+    }
+
+    .project-info input {
+        width: 300px;
+    }
+
+    .shift-btn {
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #495057;
+        font-weight: bold;
+        transition: all 0.2s;
+    }
+
+    .shift-btn:hover {
+        background: #e9ecef;
+    }
+
+    /* ★追加：描画ツールボタンのデザイン */
+    .tool-btn {
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #495057;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+
+    .tool-btn:hover {
+        background: #e9ecef;
+    }
+
+    .tool-btn.active {
+        background: #0d6efd;
+        color: #ffffff;
+        border-color: #0d6efd;
+        font-weight: bold;
+    }
+
+    .stamp-container {
+        display: flex;
+        align-items: flex-start;
+        margin-left: 20px;
+    }
+
+    .stamp-box {
+        display: grid;
+        grid-template-columns: 70px 70px;
+        grid-template-rows: auto 70px;
+        background-color: #ffffff;
+        border-top: 1px solid #495057;
+        border-left: 1px solid #495057;
+    }
+
+    .stamp-title,
+    .stamp-space {
+        border-right: 1px solid #495057;
+        border-bottom: 1px solid #495057;
+        box-sizing: border-box;
+    }
+
+    .stamp-title {
+        font-size: 11px;
+        color: #495057;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4px 0;
+        letter-spacing: -0.5px;
+        white-space: nowrap;
+    }
+
+    /* -------------------------------------
     メインレイアウト
     ------------------------------------- */
-.main-container { 
-    display: flex; 
-    flex-direction: column; 
-    flex: 1; 
-    overflow: hidden; 
-}
-.gantt-wrapper { 
-    display: flex; 
-    flex: 3; 
-    overflow: hidden; 
-}
-
-/* 左ペイン：テーブル */
-.left-pane { 
-    width: 620px; /* ★元800pxから大幅にスリム化 */
-    min-width: 520px; /* ★元600pxから縮小 */
-    max-width: 60%; /* ★カレンダー領域を確保するため最大幅も制限 */
-    resize: horizontal; 
-    overflow: hidden; 
-    background: #ffffff; 
-    border-right: 1px solid #dee2e6; 
-    display: flex; 
-    flex-direction: column; 
-    z-index: 10; 
-    box-shadow: 2px 0 5px rgba(0,0,0,0.02); 
-    transition: width 0.2s ease, min-width 0.2s ease; 
-}
-.left-pane.collapsed-view { 
-    width: 350px !important; 
-    min-width: 300px !important; 
-    resize: none; 
-}
-.left-pane.collapsed-view table th:nth-child(n+5),
-.left-pane.collapsed-view table td.task-start-cell,
-.left-pane.collapsed-view table td.task-end-cell,
-.left-pane.collapsed-view table td.task-days-cell,
-.left-pane.collapsed-view table td.task-progress-cell,
-.left-pane.collapsed-view table td.task-action-cell { 
-    display: none !important; 
-}
-
-.table-container { 
-    flex: 1; 
-    overflow-y: auto; 
-    overflow-x: auto; 
-}
-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    font-size: 13px; 
-    table-layout: fixed; 
-}
-
-th:nth-child(1) { width: 5%; min-width: 35px; text-align: center; }  /* No. */
-th:nth-child(2) { width: 17%; min-width: 70px; } /* 工種 */
-th:nth-child(3) { width: 17%; min-width: 70px; } /* 種別 */
-th:nth-child(4) { width: 17%; min-width: 70px; } /* 細別・規格 */
-th:nth-child(5) { width: 12%; min-width: 60px; text-align: center;} /* 開始日 */                   
-th:nth-child(6) { width: 12%; min-width: 60px; text-align: center;} /* 終了日 */                   
-th:nth-child(7) { width: 8%; min-width: 40px; text-align: center;}  /* 日数 */                    
-th:nth-child(8) { width: 8%; min-width: 40px; text-align: center; } /* 進捗 */
-th:nth-child(9) { width: 4%; min-width: 30px; text-align: center; } /* 色 */
-
-/* ★追加：列幅変更（ドラッグ）用のハンドルのスタイル */
-
-/* ★追加：列幅変更（ドラッグ）用のハンドルのスタイル */
-.col-resizer {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 5px;
-    height: 100%;
-    cursor: col-resize;
-    user-select: none;
-    z-index: 10;
-}
-.col-resizer:hover, .col-resizer.resizing {
-    background-color: rgba(13, 110, 253, 0.3);
-}
-
-th, td { 
-    border-bottom: 1px solid #dee2e6; 
-    border-right: 1px solid #dee2e6; 
-    padding: 4px 6px; 
-    text-align: left; 
-    vertical-align: top; 
-}
-/* セル結合時の見栄えのため、垂直方向を中央揃えに */
-td.task-koshu-cell, td.task-shubetsu-cell {
-    vertical-align: middle;
-}
-
-th { 
-    background-color: #e9ecef; 
-    position: sticky; 
-    top: 0; 
-    z-index: 5; 
-    height: 32px; 
-    box-sizing: border-box; 
-    text-align: center; /* ★追加：左右の中央揃え */
-    vertical-align: middle; /* ★追加：上下の中央揃え */
-}
-td input[type="text"] { 
-    width: 100%; 
-    box-sizing: border-box; 
-    border: 1px solid transparent; 
-    padding: 4px 2px; 
-    background: transparent; 
-    text-align: center; /* ★追加：入力欄の文字をデフォルトで中央揃えにする */
-}
-td input[type="text"]:focus { 
-    border: 1px solid #86b7fe; 
-    outline: none; 
-    background: #fff; 
-}
-
-.period-input { 
-    height: 28px; 
-    margin-bottom: 4px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-}
-.period-input:last-child { margin-bottom: 0; }
-.task-no { font-weight: bold; color: #6c757d; }
-
-.clickable-text {
-    cursor: pointer;
-    border-radius: 4px;
-    width: 100%;
-    text-align: center;
-    transition: background-color 0.2s;
-    color: #212529;
-    padding: 2px 0;
-}
-.clickable-text:hover {
-    background-color: #e2e6ea;
-    box-shadow: inset 0 0 0 1px #ced4da;
-}
-.empty-text { color: #adb5bd; font-size: 11px; }
-
-.task-name-container { display: flex; flex-direction: column; gap: 6px; }
-
-.toggle-btn { 
-    background: none; border: none; cursor: pointer; font-size: 10px; 
-    padding: 2px 4px; color: #6c757d; width: 24px; display: flex; 
-    justify-content: center; align-items: center; 
-}
-.toggle-btn:hover { color: #343a40; background-color: #e9ecef; border-radius: 3px; }
-
-tr.collapsed .sub-period { display: none !important; }
-
-.add-period-btn { 
-    font-size: 11px; padding: 2px 4px; background: #e9ecef; border: 1px solid #ced4da; 
-    border-radius: 3px; cursor: pointer; align-self: flex-start; color: #495057; 
-}
-.add-period-btn:hover { background: #dde2e6; }
-.del-period-btn { 
-    border: none; background: transparent; color: #dc3545; cursor: pointer; 
-    font-size: 16px; font-weight: bold; padding: 0 4px; 
-}
-.del-period-btn:disabled { color: #ced4da; cursor: not-allowed; }
-
-.add-row-btn { 
-    width: 100%; padding: 8px; background: #f8f9fa; border: none; 
-    border-top: 1px solid #dee2e6; cursor: pointer; color: #495057; 
-}
-.add-row-btn:hover { background: #e2e6ea; }
-
-/* -------------------------------------
-    中央ペイン：カレンダー表示
-    ------------------------------------- */
-.right-pane { 
-    flex: 1; background: #ffffff; overflow-x: auto; overflow-y: scroll; position: relative; 
-}
-.right-pane::-webkit-scrollbar, #daily-notes-right::-webkit-scrollbar { height: 12px; }
-.right-pane::-webkit-scrollbar-track, #daily-notes-right::-webkit-scrollbar-track { background: #f1f1f1; }
-.right-pane::-webkit-scrollbar-thumb, #daily-notes-right::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 6px; }
-.right-pane::-webkit-scrollbar-thumb:hover, #daily-notes-right::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-
-.calendar-header { 
-    display: flex; white-space: nowrap; border-bottom: 1px solid #dee2e6; 
-    position: sticky; top: 0; background: white; z-index: 5; height: 32px; box-sizing: border-box; 
-}
-.day-cell { 
-    display: inline-block; text-align: center; border-right: 1px solid #dee2e6; 
-    padding: 4px 0; font-size: 12px; box-sizing: border-box; flex-shrink: 0; height: 100%; 
-}
-.holiday-cell { background-color: #e9ecef !important; color: #6c757d; }
-.national-holiday-cell { background-color: #f8d7da !important; color: #dc3545; font-weight: bold; }
-
-.chart-area { 
-    position: relative; 
-    min-height: calc(100% - 32px); 
-    overflow: hidden; 
-}
-#arrow-layer { 
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    pointer-events: none; z-index: 10; 
-}
-.today-line { 
-    position: absolute; top: 0; width: 2px; height: 100%; background-color: #ffc107; 
-    z-index: 15; pointer-events: none; box-shadow: 0 0 4px rgba(255,193,7,0.5); 
-}
-.chart-row { 
-    position: relative; border-bottom: 1px solid #dee2e6; box-sizing: border-box; z-index: 1; 
-}
-
-.task-bar { 
-    position: absolute; height: 22px; border-radius: 4px; color: white; 
-    font-size: 11px; line-height: 22px; padding: 0 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
-    z-index: 2; cursor: grab; user-select: none; display: flex; align-items: center; 
-    transition: outline 0.1s ease; 
-}
-.task-bar:active { cursor: grabbing; }
-.task-bar.selected { outline: 2px solid #dc3545; box-shadow: 0 0 8px rgba(220, 53, 69, 0.5); z-index: 100; }
-
-#arrow-layer path { pointer-events: visibleStroke; cursor: pointer; }
-#arrow-layer path.selected { stroke: #dc3545 !important; stroke-width: 4 !important; }
-
-.task-bar-text { 
-    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
-    pointer-events: none; position: relative; z-index: 2; 
-}
-.resize-handle { 
-    position: absolute; right: 0; top: 0; width: 8px; height: 100%; cursor: e-resize; 
-    background-color: rgba(255, 255, 255, 0.2); border-top-right-radius: 4px; 
-    border-bottom-right-radius: 4px; z-index: 10; 
-}
-.resize-handle:hover { background-color: rgba(255, 255, 255, 0.5); }
-
-.link-handle { 
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
-    width: 12px; height: 12px; background-color: #ff6b6b; border: 2px solid white; 
-    border-radius: 50%; cursor: crosshair; z-index: 20; display: none; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3); box-sizing: border-box; 
-}
-.task-bar:hover .link-handle { display: block; }
-
-/* -------------------------------------
-    右端ペイン：備考欄
-    ------------------------------------- */
-.notes-pane { 
-    width: 250px; min-width: 150px; background: #ffffff; border-left: 1px solid #dee2e6; 
-    display: flex; flex-direction: column; box-shadow: -2px 0 5px rgba(0,0,0,0.02); 
-    transition: width 0.2s ease, min-width 0.2s ease; z-index: 10; 
-}
-.notes-pane.collapsed { width: 32px !important; min-width: 32px !important; }
-.notes-pane.collapsed .notes-title, .notes-pane.collapsed #project-notes { display: none; }
-.notes-header { 
-    height: 32px; background-color: #e9ecef; border-bottom: 1px solid #dee2e6; 
-    display: flex; justify-content: space-between; align-items: center; padding: 0 8px; 
-    box-sizing: border-box; font-size: 13px; font-weight: bold; color: #495057; white-space: nowrap; 
-}
-#project-notes { 
-    flex: 1; border: none; resize: none; padding: 10px; font-family: inherit; 
-    font-size: 13px; outline: none; color: #212529; background: transparent; 
-}
-
-/* -------------------------------------
-    下部：日別備考エリア
-    ------------------------------------- */
-.daily-notes-wrapper { 
-    display: flex; flex-direction: column; flex: 1; min-height: 120px; 
-    background: #ffffff; border-top: 3px solid #adb5bd; 
-}
-.daily-tabs-header { 
-    display: flex; background: #e9ecef; border-bottom: 1px solid #dee2e6; 
-    padding: 4px 10px 0 10px; gap: 4px; 
-}
-#daily-tabs-container { display: flex; overflow-x: auto; scrollbar-width: none; }
-#daily-tabs-container::-webkit-scrollbar { display: none; }
-.daily-tab-btn { 
-    padding: 4px 16px; border: 1px solid transparent; border-bottom: none; 
-    background: transparent; cursor: pointer; font-size: 12px; color: #6c757d; 
-    border-radius: 4px 4px 0 0; margin-bottom: -1px; white-space: nowrap; transition: all 0.2s; 
-}
-.daily-tab-btn:hover { background-color: #dee2e6; color: #495057; }
-.daily-tab-btn.active { background-color: #ffffff; border-color: #dee2e6; color: #0d6efd; font-weight: bold; }
-
-.daily-notes-content { display: flex; flex: 1; overflow: hidden; }
-#daily-notes-left { 
-    width: 800px; border-right: 1px solid #dee2e6; background: #f8f9fa; 
-    display: flex; align-items: center; justify-content: center; color: #495057; position: relative; 
-}
-.daily-tab-actions { 
-    display: flex; align-items: center; gap: 8px; background: white; 
-    padding: 8px 16px; border: 1px solid #ced4da; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-}
-#daily-notes-right { flex: 1; overflow-x: auto; overflow-y: scroll; display: flex; }
-#daily-notes-grid { display: flex; height: 100%; }
-.daily-note-cell { border-right: 1px solid #dee2e6; box-sizing: border-box; height: 100%; }
-.daily-note-cell textarea { 
-    width: 100%; height: 100%; border: none; resize: none; padding: 6px; 
-    box-sizing: border-box; font-size: 11px; font-family: inherit; background: transparent; outline: none; 
-}
-.daily-note-cell textarea:focus { background: #ffffff; box-shadow: inset 0 0 0 1px #86b7fe; }
-
-/* -------------------------------------
-    印刷用スタイル
-    ------------------------------------- */
-@media print {
-    @page { size: A3 landscape; margin: 10mm; }
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: white; }
-    .menubar, .add-row-btn, .add-period-btn, .del-period-btn, .toggle-btn, .resize-handle, .link-handle { display: none !important; }
-    .print-hide { display: none !important; }
-    
-    /* =========================================================
-       ★ ヘッダー（上部）のデザインを本格的な書類風に大改修 ★
-       ========================================================= */
-    .top-panel { 
-        position: relative !important;
-        box-shadow: none; 
-        border-bottom: 3px double #000 !important;
-        padding: 45px 0 15px 0 !important;
-        margin-bottom: 20px; 
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: flex-end !important;
+    .main-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
     }
 
-    /* 用紙の中央最上部に「工 程 表」の大見出しを自動印字 */
-    .top-panel::before {
-        content: "工 程 表";
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 32px;
-        font-weight: bold;
-        letter-spacing: 20px;
-        color: #000;
+    .gantt-wrapper {
+        display: flex;
+        flex: 3;
+        overflow: hidden;
     }
 
-    /* 入力欄の枠線を消す */
-    .top-panel input, td input, .header-controls select { 
-        border: none !important; background: transparent !important; padding: 0; 
-        appearance: none; -webkit-appearance: none; color: #000; 
+    /* 左ペイン：テーブル */
+    .left-pane {
+        width: 620px;
+        /* ★元800pxから大幅にスリム化 */
+        min-width: 520px;
+        /* ★元600pxから縮小 */
+        max-width: 60%;
+        /* ★カレンダー領域を確保するため最大幅も制限 */
+        resize: horizontal;
+        overflow: hidden;
+        background: #ffffff;
+        border-right: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.02);
+        transition: width 0.2s ease, min-width 0.2s ease;
     }
 
-    /* プロジェクト情報の枠をブロックにして縦並びにする */
-    .project-info {
-        display: block !important;
+    .left-pane.collapsed-view {
+        width: 350px !important;
+        min-width: 300px !important;
+        resize: none;
     }
 
-    /* 工事名・事業者名・全体工期のラベルを縦に並べる */
-    .project-info label {
-        display: block !important;
-        margin-bottom: 12px !important;
-        margin-left: 0 !important; /* HTML側の余白設定を強制的にリセット */
-        font-size: 14px !important;
-        font-weight: bold !important;
-        color: #000 !important;
-    }
-
-    /* 工事名の文字を大きく */
-    #project-name {
-        font-size: 24px !important;
-        font-weight: bold !important;
-        border-bottom: 1px solid #000 !important;
-        padding-bottom: 2px !important;
-        margin-left: 10px !important;
-        width: 500px !important;
-    }
-
-    /* 事業者名 */
-    #company-name {
-        font-size: 18px !important;
-        border-bottom: 1px dashed #666 !important;
-        padding-bottom: 2px !important;
-        margin-left: 10px !important;
-        width: 400px !important;
-    }
-
-    /* カレンダーアイコンを完全に消去 */
-    input[type="date"]::-webkit-calendar-picker-indicator,
-    input[type="date"]::-webkit-inner-spin-button,
-    input[type="date"]::-webkit-clear-button {
-        display: none !important;
-        -webkit-appearance: none !important;
-    }
-
-    /* ★修正：開始日と終了日をピンポイントで狙い撃ちして、幅をギリギリまで狭くする */
-    #project-start, #project-end {
-        display: inline-block !important;
-        font-size: 16px !important;
-        font-weight: bold !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 105px !important; /* 日付の文字だけがピタリと収まる幅 */
-        text-align: center !important;
-        vertical-align: baseline !important;
-    }
-
-    /* スタンプ枠 */
-    .stamp-box { border-top: 1px solid #000; border-left: 1px solid #000; background: #fff !important; }
-    .stamp-title, .stamp-space { border-right: 1px solid #000; border-bottom: 1px solid #000; color: #000; }
-    .stamp-title { font-size: 12px !important; background-color: #f0f0f0 !important; }
-    
-    /* =========================================================
-       以下はレイアウト（幅・高さ）を綺麗に保つための設定（変更なし）
-       ========================================================= */
-    .main-container { display: flex; overflow: visible !important; width: max-content; height: auto !important; }
-    .gantt-wrapper { overflow: visible !important; flex: none; display: flex; }
-    
-    .left-pane { width: 520px !important; min-width: 520px !important; max-width: 520px !important; resize: none; overflow: hidden !important; box-shadow: none; }
-    .left-pane.collapsed-view { width: 350px !important; min-width: 350px !important; max-width: 350px !important; }
-    
     .left-pane.collapsed-view table th:nth-child(n+5),
     .left-pane.collapsed-view table td.task-start-cell,
     .left-pane.collapsed-view table td.task-end-cell,
     .left-pane.collapsed-view table td.task-days-cell,
     .left-pane.collapsed-view table td.task-progress-cell,
-    .left-pane.collapsed-view table td.task-action-cell { display: none !important; }
-    
-    .table-container { overflow: hidden !important; }
-    .right-pane { overflow: visible !important; flex: none; }
-    th, .calendar-header { position: static !important; }
-    
-    .notes-pane { width: 250px !important; min-width: 250px !important; max-width: 250px !important; border-left: 2px solid #000; box-shadow: none; height: auto !important; }
-    .notes-pane.collapsed { display: none !important; } 
-    #project-notes { overflow: hidden; color: #000; height: auto !important; min-height: 100px; }
-    
-    .daily-notes-wrapper { border-top: 2px solid #000; overflow: visible !important; flex: none; height: auto; }
-    .daily-tabs-header { display: none !important; }
-    .daily-notes-content { overflow: visible !important; }
-    #daily-notes-right { overflow: visible !important; flex: none; }
-    .daily-note-cell textarea { color: #000; overflow: hidden; }
-    .daily-tab-actions { border: none; box-shadow: none; background: transparent; }
-    .daily-tab-actions button { display: none; } 
-}
+    .left-pane.collapsed-view table td.task-action-cell {
+        display: none !important;
+    }
 
-/* ★修正：カレンダー上のテキストボックス（書式・リサイズ対応） */
-.chart-text-box {
-    position: absolute;
-    z-index: 20;
-    padding: 4px 6px;
-    cursor: move; 
-    user-select: none;
-    box-sizing: border-box;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    
-    /* 大きさ変更（リサイズ）と折り返しの設定 */
-    resize: both;
-    overflow: hidden;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    min-width: 40px;
-    min-height: 25px;
-}
-.chart-text-box:hover {
-    outline: 2px solid #0d6efd; /* hover時の青枠をborderからoutlineに変更 */
-    z-index: 21;
-}
+    .table-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
 
-/* ★追加：書式ツールバーと選択状態のデザイン */
-.format-toolbar {
-    display: flex; gap: 4px; align-items: center; margin-top: 10px;
-    background: #f8f9fa; padding: 4px 10px; border: 1px solid #ced4da; border-radius: 4px;
-    transition: opacity 0.2s;
-}
-.format-toolbar input, .format-toolbar select {
-    padding: 2px 4px; border: 1px solid #ced4da; border-radius: 3px; font-size: 13px; height: 24px; box-sizing: border-box;
-}
-.format-toolbar input[type="color"] { padding: 0; width: 28px; cursor: pointer; }
-.format-toolbar input[type="number"] { width: 45px; }
-.toolbar-label { font-size: 13px; color: #6c757d; font-weight: bold; margin-right: 4px; }
-.toolbar-divider { width: 1px; height: 18px; background-color: #ced4da; margin: 0 4px; }
-.format-btn {
-    background: transparent; border: 1px solid transparent; padding: 0 6px; height: 24px;
-    border-radius: 3px; cursor: pointer; color: #495057; font-size: 14px;
-    display: flex; align-items: center; justify-content: center; min-width: 24px;
-}
-.format-btn:hover { background: #e2e6ea; }
-.format-btn.active { background: #cfe2ff; border-color: #9ec5fe; color: #084298; }
-.clear-bg-btn { position: absolute; right: -8px; top: -8px; background: white; border: 1px solid #ced4da; font-size: 10px; width: 16px; height: 16px; min-width: auto; padding: 0; border-radius: 50%; color: #dc3545; }
-.clear-bg-btn:hover { background: #f8d7da; }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        table-layout: fixed;
+    }
 
-/* カラーパレット */
-.color-input-group { display: flex; align-items: center; position: relative; }
-.color-palette-trigger {
-    display: flex; align-items: center; gap: 2px;
-    height: 24px; padding: 2px 3px;
-    background: white; border: 1px solid #ced4da; border-right: none; border-radius: 3px 0 0 3px;
-    cursor: pointer; font-size: 9px; color: #6c757d;
-}
-.color-palette-trigger:hover { background: #e2e6ea; }
-.color-input-group > input[type="color"] { border-radius: 0 3px 3px 0; }
-.color-preview-swatch {
-    display: inline-block; width: 13px; height: 13px;
-    border: 1px solid rgba(0,0,0,0.25); border-radius: 2px; flex-shrink: 0;
-}
-#color-palette-popup {
-    display: none; position: fixed; z-index: 9999;
-    background: white; border: 1px solid #ced4da; border-radius: 6px;
-    padding: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.18);
-}
-.color-swatches-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-.color-swatch {
-    width: 24px; height: 24px; border-radius: 3px;
-    border: 1px solid rgba(0,0,0,0.18); cursor: pointer; padding: 0;
-    transition: transform 0.1s;
-}
-.color-swatch:hover { transform: scale(1.2); border-color: rgba(0,0,0,0.5); z-index: 1; position: relative; }
-.color-swatch.transparent-swatch {
-    background-image: linear-gradient(45deg,#ccc 25%,transparent 25%),
-                      linear-gradient(-45deg,#ccc 25%,transparent 25%),
-                      linear-gradient(45deg,transparent 75%,#ccc 75%),
-                      linear-gradient(-45deg,transparent 75%,#ccc 75%);
-    background-size: 8px 8px;
-    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
-    background-color: white;
-}
+    th:nth-child(1) {
+        width: 5%;
+        min-width: 35px;
+        text-align: center;
+    }
 
-.chart-text-box.selected {
-    outline: 2px solid #0d6efd;
-    z-index: 25;
-}
+    /* No. */
+    th:nth-child(2) {
+        width: 17%;
+        min-width: 70px;
+    }
 
-/* ★修正：ユーザーが入力する項目のみにフォントを適用 */
-:root {
-    --global-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --global-font-size: 13px;
-}
+    /* 工種 */
+    th:nth-child(3) {
+        width: 17%;
+        min-width: 70px;
+    }
 
-/* 工事名、会社名、表の入力欄、日付・進捗の文字、備考欄、日別備考の入力欄 */
-#project-name, 
-#company-name, 
-#task-tbody input[type="text"], 
-.clickable-text, 
-#project-notes, 
-.daily-note-cell textarea {
-    font-family: var(--global-font-family);
-    font-size: var(--global-font-size);
-}
+    /* 種別 */
+    th:nth-child(4) {
+        width: 17%;
+        min-width: 70px;
+    }
 
-/* 工程のバーの文字（全体のサイズに比例して少し小さくする） */
-.task-bar {
-    font-family: var(--global-font-family) !important;
-    font-size: calc(var(--global-font-size) - 2px) !important;
-}
+    /* 細別・規格 */
+    th:nth-child(5) {
+        width: 12%;
+        min-width: 60px;
+        text-align: center;
+    }
 
-/* ★追加：例文（プレースホルダー）にはフォント設定を適用せず、常に薄いグレーの標準フォントにする */
-input::placeholder, textarea::placeholder {
-    color: #adb5bd !important;
-    font-weight: normal !important;
-    font-size: 13px !important;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-    font-style: normal !important;
-    background-color: transparent !important;
-}
+    /* 開始日 */
+    th:nth-child(6) {
+        width: 12%;
+        min-width: 60px;
+        text-align: center;
+    }
 
-/* ★修正：中身が増えた時に自動で広がるように !important を外す */
-.task-row td {
-    height: 40px;
-    box-sizing: border-box;
-    vertical-align: middle;
-}
+    /* 終了日 */
+    th:nth-child(7) {
+        width: 8%;
+        min-width: 40px;
+        text-align: center;
+    }
+
+    /* 日数 */
+    th:nth-child(8) {
+        width: 8%;
+        min-width: 40px;
+        text-align: center;
+    }
+
+    /* 進捗 */
+    th:nth-child(9) {
+        width: 4%;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    /* 色 */
+
+    /* ★追加：列幅変更（ドラッグ）用のハンドルのスタイル */
+
+    /* ★追加：列幅変更（ドラッグ）用のハンドルのスタイル */
+    .col-resizer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 5px;
+        height: 100%;
+        cursor: col-resize;
+        user-select: none;
+        z-index: 10;
+    }
+
+    .col-resizer:hover,
+    .col-resizer.resizing {
+        background-color: rgba(13, 110, 253, 0.3);
+    }
+
+    th,
+    td {
+        border-bottom: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+        padding: 4px 6px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    /* セル結合時の見栄えのため、垂直方向を中央揃えに */
+    td.task-koshu-cell,
+    td.task-shubetsu-cell {
+        vertical-align: middle;
+    }
+
+    th {
+        background-color: #e9ecef;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        height: 32px;
+        box-sizing: border-box;
+        text-align: center;
+        /* ★追加：左右の中央揃え */
+        vertical-align: middle;
+        /* ★追加：上下の中央揃え */
+    }
+
+    td input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid transparent;
+        padding: 4px 2px;
+        background: transparent;
+        text-align: center;
+        /* ★追加：入力欄の文字をデフォルトで中央揃えにする */
+    }
+
+    td input[type="text"]:focus {
+        border: 1px solid #86b7fe;
+        outline: none;
+        background: #fff;
+    }
+
+    .period-input {
+        height: 28px;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .period-input:last-child {
+        margin-bottom: 0;
+    }
+
+    .task-no {
+        font-weight: bold;
+        color: #6c757d;
+    }
+
+    .clickable-text {
+        cursor: pointer;
+        border-radius: 4px;
+        width: 100%;
+        text-align: center;
+        transition: background-color 0.2s;
+        color: #212529;
+        padding: 2px 0;
+    }
+
+    .clickable-text:hover {
+        background-color: #e2e6ea;
+        box-shadow: inset 0 0 0 1px #ced4da;
+    }
+
+    .empty-text {
+        color: #adb5bd;
+        font-size: 11px;
+    }
+
+    .task-name-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .toggle-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 10px;
+        padding: 2px 4px;
+        color: #6c757d;
+        width: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .toggle-btn:hover {
+        color: #343a40;
+        background-color: #e9ecef;
+        border-radius: 3px;
+    }
+
+    tr.collapsed .sub-period {
+        display: none !important;
+    }
+
+    .add-period-btn {
+        font-size: 11px;
+        padding: 2px 4px;
+        background: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 3px;
+        cursor: pointer;
+        align-self: flex-start;
+        color: #495057;
+    }
+
+    .add-period-btn:hover {
+        background: #dde2e6;
+    }
+
+    .del-period-btn {
+        border: none;
+        background: transparent;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        padding: 0 4px;
+    }
+
+    .del-period-btn:disabled {
+        color: #ced4da;
+        cursor: not-allowed;
+    }
+
+    .add-row-btn {
+        width: 100%;
+        padding: 8px;
+        background: #f8f9fa;
+        border: none;
+        border-top: 1px solid #dee2e6;
+        cursor: pointer;
+        color: #495057;
+    }
+
+    .add-row-btn:hover {
+        background: #e2e6ea;
+    }
+
+    /* -------------------------------------
+    中央ペイン：カレンダー表示
+    ------------------------------------- */
+    .right-pane {
+        flex: 1;
+        background: #ffffff;
+        overflow-x: auto;
+        overflow-y: scroll;
+        position: relative;
+    }
+
+    .right-pane::-webkit-scrollbar,
+    #daily-notes-right::-webkit-scrollbar {
+        height: 12px;
+    }
+
+    .right-pane::-webkit-scrollbar-track,
+    #daily-notes-right::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .right-pane::-webkit-scrollbar-thumb,
+    #daily-notes-right::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 6px;
+    }
+
+    .right-pane::-webkit-scrollbar-thumb:hover,
+    #daily-notes-right::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    .calendar-header {
+        display: flex;
+        white-space: nowrap;
+        border-bottom: 1px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 5;
+        height: 32px;
+        box-sizing: border-box;
+    }
+
+    .day-cell {
+        display: inline-block;
+        text-align: center;
+        border-right: 1px solid #dee2e6;
+        padding: 4px 0;
+        font-size: 12px;
+        box-sizing: border-box;
+        flex-shrink: 0;
+        height: 100%;
+    }
+
+    .holiday-cell {
+        background-color: #e9ecef !important;
+        color: #6c757d;
+    }
+
+    .national-holiday-cell {
+        background-color: #f8d7da !important;
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .chart-area {
+        position: relative;
+        min-height: calc(100% - 32px);
+        overflow: hidden;
+    }
+
+    #arrow-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .today-line {
+        position: absolute;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background-color: #ffc107;
+        z-index: 15;
+        pointer-events: none;
+        box-shadow: 0 0 4px rgba(255, 193, 7, 0.5);
+    }
+
+    .chart-row {
+        position: relative;
+        border-bottom: 1px solid #dee2e6;
+        box-sizing: border-box;
+        z-index: 1;
+    }
+
+    .task-bar {
+        position: absolute;
+        height: 22px;
+        border-radius: 4px;
+        color: white;
+        font-size: 11px;
+        line-height: 22px;
+        padding: 0 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        z-index: 2;
+        cursor: grab;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        transition: outline 0.1s ease;
+    }
+
+    .task-bar:active {
+        cursor: grabbing;
+    }
+
+    .task-bar.selected {
+        outline: 2px solid #dc3545;
+        box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
+        z-index: 100;
+    }
+
+    #arrow-layer path {
+        pointer-events: visibleStroke;
+        cursor: pointer;
+    }
+
+    #arrow-layer path.selected {
+        stroke: #dc3545 !important;
+        stroke-width: 4 !important;
+    }
+
+    .task-bar-text {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        pointer-events: none;
+        position: relative;
+        z-index: 2;
+    }
+
+    .resize-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 8px;
+        height: 100%;
+        cursor: e-resize;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        z-index: 10;
+    }
+
+    .resize-handle:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .link-handle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        background-color: #ff6b6b;
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: crosshair;
+        z-index: 20;
+        display: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
+    }
+
+    .task-bar:hover .link-handle {
+        display: block;
+    }
+
+    /* -------------------------------------
+    右端ペイン：備考欄
+    ------------------------------------- */
+    .notes-pane {
+        width: 250px;
+        min-width: 150px;
+        background: #ffffff;
+        border-left: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.02);
+        transition: width 0.2s ease, min-width 0.2s ease;
+        z-index: 10;
+    }
+
+    .notes-pane.collapsed {
+        width: 32px !important;
+        min-width: 32px !important;
+    }
+
+    .notes-pane.collapsed .notes-title,
+    .notes-pane.collapsed #project-notes {
+        display: none;
+    }
+
+    .notes-header {
+        height: 32px;
+        background-color: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 8px;
+        box-sizing: border-box;
+        font-size: 13px;
+        font-weight: bold;
+        color: #495057;
+        white-space: nowrap;
+    }
+
+    #project-notes {
+        flex: 1;
+        border: none;
+        resize: none;
+        padding: 10px;
+        font-family: inherit;
+        font-size: 13px;
+        outline: none;
+        color: #212529;
+        background: transparent;
+    }
+
+    /* -------------------------------------
+    下部：日別備考エリア
+    ------------------------------------- */
+    .daily-notes-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 120px;
+        background: #ffffff;
+        border-top: 3px solid #adb5bd;
+    }
+
+    .daily-tabs-header {
+        display: flex;
+        background: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        padding: 4px 10px 0 10px;
+        gap: 4px;
+    }
+
+    #daily-tabs-container {
+        display: flex;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    #daily-tabs-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .daily-tab-btn {
+        padding: 4px 16px;
+        border: 1px solid transparent;
+        border-bottom: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        color: #6c757d;
+        border-radius: 4px 4px 0 0;
+        margin-bottom: -1px;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .daily-tab-btn:hover {
+        background-color: #dee2e6;
+        color: #495057;
+    }
+
+    .daily-tab-btn.active {
+        background-color: #ffffff;
+        border-color: #dee2e6;
+        color: #0d6efd;
+        font-weight: bold;
+    }
+
+    .daily-notes-content {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    #daily-notes-left {
+        width: 800px;
+        border-right: 1px solid #dee2e6;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #495057;
+        position: relative;
+    }
+
+    .daily-tab-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        padding: 8px 16px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    #daily-notes-right {
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: scroll;
+        display: flex;
+    }
+
+    #daily-notes-grid {
+        display: flex;
+        height: 100%;
+    }
+
+    .daily-note-cell {
+        border-right: 1px solid #dee2e6;
+        box-sizing: border-box;
+        height: 100%;
+    }
+
+    .daily-note-cell textarea {
+        width: 100%;
+        height: 100%;
+        border: none;
+        resize: none;
+        padding: 6px;
+        box-sizing: border-box;
+        font-size: 11px;
+        font-family: inherit;
+        background: transparent;
+        outline: none;
+    }
+
+    .daily-note-cell textarea:focus {
+        background: #ffffff;
+        box-shadow: inset 0 0 0 1px #86b7fe;
+    }
+
+    /* -------------------------------------
+    印刷用スタイル
+    ------------------------------------- */
+    @media print {
+        @page {
+            size: A3 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            background-color: white;
+        }
+
+        .menubar,
+        .add-row-btn,
+        .add-period-btn,
+        .del-period-btn,
+        .toggle-btn,
+        .resize-handle,
+        .link-handle {
+            display: none !important;
+        }
+
+        .print-hide {
+            display: none !important;
+        }
+
+        /* =========================================================
+       ★ ヘッダー（上部）のデザインを本格的な書類風に大改修 ★
+       ========================================================= */
+        .top-panel {
+            position: relative !important;
+            box-shadow: none;
+            border-bottom: 3px double #000 !important;
+            padding: 45px 0 15px 0 !important;
+            margin-bottom: 20px;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-end !important;
+        }
+
+        /* 用紙の中央最上部に「工 程 表」の大見出しを自動印字 */
+        .top-panel::before {
+            content: "工 程 表";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 20px;
+            color: #000;
+        }
+
+        /* 入力欄の枠線を消す */
+        .top-panel input,
+        td input,
+        .header-controls select {
+            border: none !important;
+            background: transparent !important;
+            padding: 0;
+            appearance: none;
+            -webkit-appearance: none;
+            color: #000;
+        }
+
+        /* プロジェクト情報の枠をブロックにして縦並びにする */
+        .project-info {
+            display: block !important;
+        }
+
+        /* 工事名・事業者名・全体工期のラベルを縦に並べる */
+        .project-info label {
+            display: block !important;
+            margin-bottom: 12px !important;
+            margin-left: 0 !important;
+            /* HTML側の余白設定を強制的にリセット */
+            font-size: 14px !important;
+            font-weight: bold !important;
+            color: #000 !important;
+        }
+
+        /* 工事名の文字を大きく */
+        #project-name {
+            font-size: 24px !important;
+            font-weight: bold !important;
+            border-bottom: 1px solid #000 !important;
+            padding-bottom: 2px !important;
+            margin-left: 10px !important;
+            width: 500px !important;
+        }
+
+        /* 事業者名 */
+        #company-name {
+            font-size: 18px !important;
+            border-bottom: 1px dashed #666 !important;
+            padding-bottom: 2px !important;
+            margin-left: 10px !important;
+            width: 400px !important;
+        }
+
+        /* カレンダーアイコンを完全に消去 */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="date"]::-webkit-inner-spin-button,
+        input[type="date"]::-webkit-clear-button {
+            display: none !important;
+            -webkit-appearance: none !important;
+        }
+
+        /* ★修正：開始日と終了日をピンポイントで狙い撃ちして、幅をギリギリまで狭くする */
+        #project-start,
+        #project-end {
+            display: inline-block !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 105px !important;
+            /* 日付の文字だけがピタリと収まる幅 */
+            text-align: center !important;
+            vertical-align: baseline !important;
+        }
+
+        /* スタンプ枠 */
+        .stamp-box {
+            border-top: 1px solid #000;
+            border-left: 1px solid #000;
+            background: #fff !important;
+        }
+
+        .stamp-title,
+        .stamp-space {
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            color: #000;
+        }
+
+        .stamp-title {
+            font-size: 12px !important;
+            background-color: #f0f0f0 !important;
+        }
+
+        /* =========================================================
+       以下はレイアウト（幅・高さ）を綺麗に保つための設定（変更なし）
+       ========================================================= */
+        .main-container {
+            display: flex;
+            overflow: visible !important;
+            width: max-content;
+            height: auto !important;
+        }
+
+        .gantt-wrapper {
+            overflow: visible !important;
+            flex: none;
+            display: flex;
+        }
+
+        .left-pane {
+            width: 520px !important;
+            min-width: 520px !important;
+            max-width: 520px !important;
+            resize: none;
+            overflow: hidden !important;
+            box-shadow: none;
+        }
+
+        .left-pane.collapsed-view {
+            width: 350px !important;
+            min-width: 350px !important;
+            max-width: 350px !important;
+        }
+
+        .left-pane.collapsed-view table th:nth-child(n+5),
+        .left-pane.collapsed-view table td.task-start-cell,
+        .left-pane.collapsed-view table td.task-end-cell,
+        .left-pane.collapsed-view table td.task-days-cell,
+        .left-pane.collapsed-view table td.task-progress-cell,
+        .left-pane.collapsed-view table td.task-action-cell {
+            display: none !important;
+        }
+
+        .table-container {
+            overflow: hidden !important;
+        }
+
+        .right-pane {
+            overflow: visible !important;
+            flex: none;
+        }
+
+        th,
+        .calendar-header {
+            position: static !important;
+        }
+
+        .notes-pane {
+            width: 250px !important;
+            min-width: 250px !important;
+            max-width: 250px !important;
+            border-left: 2px solid #000;
+            box-shadow: none;
+            height: auto !important;
+        }
+
+        .notes-pane.collapsed {
+            display: none !important;
+        }
+
+        #project-notes {
+            overflow: hidden;
+            color: #000;
+            height: auto !important;
+            min-height: 100px;
+        }
+
+        .daily-notes-wrapper {
+            border-top: 2px solid #000;
+            overflow: visible !important;
+            flex: none;
+            height: auto;
+        }
+
+        .daily-tabs-header {
+            display: none !important;
+        }
+
+        .daily-notes-content {
+            overflow: visible !important;
+        }
+
+        #daily-notes-right {
+            overflow: visible !important;
+            flex: none;
+        }
+
+        .daily-note-cell textarea {
+            color: #000;
+            overflow: hidden;
+        }
+
+        .daily-tab-actions {
+            border: none;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .daily-tab-actions button {
+            display: none;
+        }
+    }
+
+    /* ★修正：カレンダー上のテキストボックス（書式・リサイズ対応） */
+    .chart-text-box {
+        position: absolute;
+        z-index: 20;
+        padding: 4px 6px;
+        cursor: move;
+        user-select: none;
+        box-sizing: border-box;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+        /* 大きさ変更（リサイズ）と折り返しの設定 */
+        resize: both;
+        overflow: hidden;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        min-width: 40px;
+        min-height: 25px;
+    }
+
+    .chart-text-box:hover {
+        outline: 2px solid #0d6efd;
+        /* hover時の青枠をborderからoutlineに変更 */
+        z-index: 21;
+    }
+
+    /* ★追加：書式ツールバーと選択状態のデザイン */
+    .format-toolbar {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        margin-top: 10px;
+        background: #f8f9fa;
+        padding: 4px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: opacity 0.2s;
+    }
+
+    .format-toolbar input,
+    .format-toolbar select {
+        padding: 2px 4px;
+        border: 1px solid #ced4da;
+        border-radius: 3px;
+        font-size: 13px;
+        height: 24px;
+        box-sizing: border-box;
+    }
+
+    .format-toolbar input[type="color"] {
+        padding: 0;
+        width: 28px;
+        cursor: pointer;
+    }
+
+    .format-toolbar input[type="number"] {
+        width: 45px;
+    }
+
+    .toolbar-label {
+        font-size: 13px;
+        color: #6c757d;
+        font-weight: bold;
+        margin-right: 4px;
+    }
+
+    .toolbar-divider {
+        width: 1px;
+        height: 18px;
+        background-color: #ced4da;
+        margin: 0 4px;
+    }
+
+    .format-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        padding: 0 6px;
+        height: 24px;
+        border-radius: 3px;
+        cursor: pointer;
+        color: #495057;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+    }
+
+    .format-btn:hover {
+        background: #e2e6ea;
+    }
+
+    .format-btn.active {
+        background: #cfe2ff;
+        border-color: #9ec5fe;
+        color: #084298;
+    }
+
+    .clear-bg-btn {
+        position: absolute;
+        right: -8px;
+        top: -8px;
+        background: white;
+        border: 1px solid #ced4da;
+        font-size: 10px;
+        width: 16px;
+        height: 16px;
+        min-width: auto;
+        padding: 0;
+        border-radius: 50%;
+        color: #dc3545;
+    }
+
+    .clear-bg-btn:hover {
+        background: #f8d7da;
+    }
+
+    /* カラーパレット */
+    .color-input-group {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .color-palette-trigger {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 24px;
+        padding: 2px 3px;
+        background: white;
+        border: 1px solid #ced4da;
+        border-right: none;
+        border-radius: 3px 0 0 3px;
+        cursor: pointer;
+        font-size: 9px;
+        color: #6c757d;
+    }
+
+    .color-palette-trigger:hover {
+        background: #e2e6ea;
+    }
+
+    .color-input-group>input[type="color"] {
+        border-radius: 0 3px 3px 0;
+    }
+
+    .color-preview-swatch {
+        display: inline-block;
+        width: 13px;
+        height: 13px;
+        border: 1px solid rgba(0, 0, 0, 0.25);
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    #color-palette-popup {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        background: white;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 8px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    .color-swatches-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+    }
+
+    .color-swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 3px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.1s;
+    }
+
+    .color-swatch:hover {
+        transform: scale(1.2);
+        border-color: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+        position: relative;
+    }
+
+    .color-swatch.transparent-swatch {
+        background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+            linear-gradient(-45deg, #ccc 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #ccc 75%),
+            linear-gradient(-45deg, transparent 75%, #ccc 75%);
+        background-size: 8px 8px;
+        background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+        background-color: white;
+    }
+
+    .chart-text-box.selected {
+        outline: 2px solid #0d6efd;
+        z-index: 25;
+    }
+
+    /* ★修正：ユーザーが入力する項目のみにフォントを適用 */
+    :root {
+        --global-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        --global-font-size: 13px;
+    }
+
+    /* 工事名、会社名、表の入力欄、日付・進捗の文字、備考欄、日別備考の入力欄 */
+    #project-name,
+    #company-name,
+    #task-tbody input[type="text"],
+    .clickable-text,
+    #project-notes,
+    .daily-note-cell textarea {
+        font-family: var(--global-font-family);
+        font-size: var(--global-font-size);
+    }
+
+    /* 工程のバーの文字（全体のサイズに比例して少し小さくする） */
+    .task-bar {
+        font-family: var(--global-font-family) !important;
+        font-size: calc(var(--global-font-size) - 2px) !important;
+    }
+
+    /* ★追加：例文（プレースホルダー）にはフォント設定を適用せず、常に薄いグレーの標準フォントにする */
+    input::placeholder,
+    textarea::placeholder {
+        color: #adb5bd !important;
+        font-weight: normal !important;
+        font-size: 13px !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        font-style: normal !important;
+        background-color: transparent !important;
+    }
+
+    /* ★修正：中身が増えた時に自動で広がるように !important を外す */
+    .task-row td {
+        height: 40px;
+        box-sizing: border-box;
+        vertical-align: middle;
+    }

@@ -1,22 +1,22 @@
 // ---------------------------------------------------
 // モーダル・コンテキストメニュー操作群
 // ---------------------------------------------------
-window.openHolidayModal = function() {
+window.openHolidayModal = function () {
     document.getElementById('modal-sun').checked = state.holidays.sundays;
     document.getElementById('modal-sat').checked = state.holidays.saturdays;
     document.getElementById('modal-national').checked = state.holidays.nationalHolidays;
     window.renderCustomHolidays();
     document.getElementById('holiday-modal').style.display = 'flex';
 };
-window.closeHolidayModal = function() { document.getElementById('holiday-modal').style.display = 'none'; };
+window.closeHolidayModal = function () { document.getElementById('holiday-modal').style.display = 'none'; };
 
-window.renderCustomHolidays = function() {
+window.renderCustomHolidays = function () {
     const list = document.getElementById('custom-holiday-list'); list.innerHTML = '';
     state.holidays.custom.sort().forEach(date => {
         list.innerHTML += `<li>${date} <button type="button" onclick="window.removeCustomHoliday('${date}')">×</button></li>`;
     });
 };
-window.addCustomHoliday = function() {
+window.addCustomHoliday = function () {
     const val = document.getElementById('custom-holiday-input').value;
     if (val && !state.holidays.custom.includes(val)) {
         state.holidays.custom.push(val);
@@ -24,11 +24,11 @@ window.addCustomHoliday = function() {
         document.getElementById('custom-holiday-input').value = '';
     }
 };
-window.removeCustomHoliday = function(date) {
+window.removeCustomHoliday = function (date) {
     state.holidays.custom = state.holidays.custom.filter(d => d !== date);
     window.renderCustomHolidays();
 };
-window.saveHolidaySettings = function() {
+window.saveHolidaySettings = function () {
     state.holidays.sundays = document.getElementById('modal-sun').checked;
     state.holidays.saturdays = document.getElementById('modal-sat').checked;
     state.holidays.nationalHolidays = document.getElementById('modal-national').checked;
@@ -37,11 +37,11 @@ window.saveHolidaySettings = function() {
     renderAll();
 };
 
-window.openPeriodModal = function(taskId, periodId) {
+window.openPeriodModal = function (taskId, periodId) {
     const task = state.tasks.find(t => t.id === taskId);
-    if(!task) return;
+    if (!task) return;
     const period = task.periods.find(p => p.pid === periodId);
-    if(!period) return;
+    if (!period) return;
 
     editModalTaskId = taskId;
     editModalPeriodId = periodId;
@@ -55,14 +55,14 @@ window.openPeriodModal = function(taskId, periodId) {
     document.getElementById('period-modal').style.display = 'flex';
 };
 
-window.closePeriodModal = function() {
+window.closePeriodModal = function () {
     document.getElementById('period-modal').style.display = 'none';
     editModalTaskId = null;
     editModalPeriodId = null;
 };
 
-window.savePeriodModal = function() {
-    if(!editModalTaskId || !editModalPeriodId) return;
+window.savePeriodModal = function () {
+    if (!editModalTaskId || !editModalPeriodId) return;
 
     const task = state.tasks.find(t => t.id === editModalTaskId);
     const period = task.periods.find(p => p.pid === editModalPeriodId);
@@ -108,7 +108,7 @@ const PALETTE_COLORS = [
     '#dc3545', '#fd7e14', '#ffc107', '#198754', '#0d6efd'
 ];
 
-window.showColorPalette = function(event, prop) {
+window.showColorPalette = function (event, prop) {
     event.stopPropagation();
     const popup = document.getElementById('color-palette-popup');
     // 同じボタンを再クリックしたら閉じる
@@ -156,7 +156,7 @@ window.showColorPalette = function(event, prop) {
     // ポップアップの表示位置をボタンの直下に設定
     const rect = event.currentTarget.getBoundingClientRect();
     popup.style.left = rect.left + 'px';
-    popup.style.top  = (rect.bottom + 4) + 'px';
+    popup.style.top = (rect.bottom + 4) + 'px';
     popup.style.display = 'block';
 };
 
@@ -202,7 +202,7 @@ if (_colorPalettePopup) {
     _colorPalettePopup.addEventListener('mousedown', (e) => e.preventDefault());
 }
 
-window.updateFormatToolbar = function() {
+window.updateFormatToolbar = function () {
     const textOnlyGroup = document.getElementById('text-only-formats');
     let target = null;
 
@@ -284,7 +284,7 @@ window.updateFormatToolbar = function() {
     }
 };
 
-window.handleFormatChange = function(prop, value) {
+window.handleFormatChange = function (prop, value) {
     const selection = window.getSelection();
     let activeEl = document.activeElement;
 
@@ -292,7 +292,7 @@ window.handleFormatChange = function(prop, value) {
         // chart-text-box はカラーピッカー等で blur すると contentEditable=false になるため
         // 一時的に再有効化して選択テキストへの書式適用を可能にする
         const isChartTextBox = savedSelectionNode.classList &&
-                               savedSelectionNode.classList.contains('chart-text-box');
+            savedSelectionNode.classList.contains('chart-text-box');
         if (savedSelectionNode.isContentEditable || isChartTextBox) {
             if (!activeEl || !activeEl.isContentEditable) {
                 try {
@@ -319,7 +319,22 @@ window.handleFormatChange = function(prop, value) {
         if (prop === 'fontWeight') {
             document.execCommand('bold', false, null);
         } else if (prop === 'color') {
-            document.execCommand('foreColor', false, value);
+            // execCommand('foreColor') はブロック境界で視覚的な改行を生じることがあるため
+            // 選択範囲を <span> でラップして color スタイルを直接適用する
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                const range = sel.getRangeAt(0);
+                const span = document.createElement('span');
+                span.style.color = value;
+                try {
+                    range.surroundContents(span);
+                } catch (err) {
+                    // 複数ノードにまたがる選択の場合は execCommand にフォールバック
+                    document.execCommand('foreColor', false, value);
+                }
+            } else {
+                document.execCommand('foreColor', false, value);
+            }
         } else if (prop === 'backgroundColor') {
             if (!document.execCommand('hiliteColor', false, value)) {
                 document.execCommand('backColor', false, value);
@@ -327,19 +342,31 @@ window.handleFormatChange = function(prop, value) {
         } else if (prop === 'fontFamily') {
             document.execCommand('fontName', false, value);
         } else if (prop === 'fontSize') {
-            document.execCommand('fontSize', false, '7');
-            const fonts = activeEl.getElementsByTagName('font');
-            for (let i = fonts.length - 1; i >= 0; i--) {
-                if (fonts[i].size === '7') {
-                    fonts[i].removeAttribute('size');
-                    fonts[i].style.fontSize = value + 'px';
+            // execCommand('fontSize') のサイズ指定は非標準のため、
+            // 選択範囲を <span> でラップして font-size を直接適用する
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                const range = sel.getRangeAt(0);
+                const span = document.createElement('span');
+                span.style.fontSize = value + 'px';
+                try {
+                    range.surroundContents(span);
+                } catch (err) {
+                    // 複数ノードにまたがる選択の場合はフォールバック
+                    document.execCommand('fontSize', false, '7');
+                    const fonts = activeEl.getElementsByTagName('font');
+                    for (let i = fonts.length - 1; i >= 0; i--) {
+                        const f = fonts[i];
+                        // size属性が7、またはstyleがxxx-largeの要素を対象にする
+                        if (f.getAttribute('size') === '7' || f.style.fontSize === 'xxx-large') {
+                            f.removeAttribute('size');
+                            f.style.fontSize = value + 'px';
+                        }
+                    }
                 }
-            }
-            const spans = activeEl.getElementsByTagName('span');
-            for (let i = spans.length - 1; i >= 0; i--) {
-                if (spans[i].style.fontSize === 'xxx-large' || spans[i].style.fontSize === '7px') {
-                    spans[i].style.fontSize = value + 'px';
-                }
+            } else {
+                // テキスト未選択時はテキストボックス全体のスタイルを変更
+                activeEl.style.fontSize = value + 'px';
             }
         } else if (prop === 'textAlign') {
             if (value === 'left') document.execCommand('justifyLeft', false, null);
@@ -415,12 +442,12 @@ window.handleFormatChange = function(prop, value) {
     window.updateFormatToolbar();
 };
 
-window.clearSavedSelection = function() {
+window.clearSavedSelection = function () {
     savedSelectionRange = null;
     savedSelectionNode = null;
 };
 
-window.selectInput = function(type, taskId = null, field = null) {
+window.selectInput = function (type, taskId = null, field = null) {
     selectedItem = { type: type, taskId: taskId, field: field };
     // 新しい要素が選択されたとき、以前のcontentEditable編集セッションの
     // 選択範囲を消去する。これにより書式が誤った要素に適用されるのを防ぐ。
@@ -435,7 +462,7 @@ window.selectInput = function(type, taskId = null, field = null) {
 let textInputCallback = null;
 let confirmCallback = null;
 
-window.openTextInputModal = function(title, defaultValue, callback) {
+window.openTextInputModal = function (title, defaultValue, callback) {
     document.getElementById('text-input-title').textContent = title;
     const inputField = document.getElementById('text-input-field');
     inputField.value = defaultValue;
@@ -443,27 +470,27 @@ window.openTextInputModal = function(title, defaultValue, callback) {
     document.getElementById('text-input-modal').style.display = 'flex';
     inputField.focus();
 };
-window.closeTextInputModal = function() {
+window.closeTextInputModal = function () {
     document.getElementById('text-input-modal').style.display = 'none';
     textInputCallback = null;
 };
-window.saveTextInputModal = function() {
+window.saveTextInputModal = function () {
     const val = document.getElementById('text-input-field').value;
     if (textInputCallback) textInputCallback(val);
     window.closeTextInputModal();
 };
 
-window.openConfirmModal = function(title, message, callback) {
+window.openConfirmModal = function (title, message, callback) {
     document.getElementById('confirm-title').textContent = title;
     document.getElementById('confirm-message').textContent = message;
     confirmCallback = callback;
     document.getElementById('confirm-modal').style.display = 'flex';
 };
-window.closeConfirmModal = function() {
+window.closeConfirmModal = function () {
     document.getElementById('confirm-modal').style.display = 'none';
     confirmCallback = null;
 };
-window.executeConfirmModal = function() {
+window.executeConfirmModal = function () {
     if (confirmCallback) confirmCallback();
     window.closeConfirmModal();
 };
@@ -473,18 +500,18 @@ window.executeConfirmModal = function() {
 // ---------------------------------------------------
 let prePrintState = null;
 
-window.openPrintModal = function() {
+window.openPrintModal = function () {
     document.getElementById('modal-print-start').value = state.displayStart;
     document.getElementById('modal-print-end').value = state.displayEnd;
     document.getElementById('modal-print-zoom').value = state.zoomRatio || 1.0;
     document.getElementById('print-modal').style.display = 'flex';
 };
 
-window.closePrintModal = function() {
+window.closePrintModal = function () {
     document.getElementById('print-modal').style.display = 'none';
 };
 
-window.executePrint = function() {
+window.executePrint = function () {
     prePrintState = {
         displayStart: state.displayStart,
         displayEnd: state.displayEnd,
@@ -559,7 +586,7 @@ window.executePrint = function() {
 // ---------------------------------------------------
 // コンテキストメニュー制御
 // ---------------------------------------------------
-window.showContextMenu = function(e, title, type, data) {
+window.showContextMenu = function (e, title, type, data) {
     e.preventDefault();
     const menu = document.getElementById('custom-context-menu');
     document.getElementById('ctx-menu-title').textContent = title;
@@ -613,7 +640,7 @@ window.showContextMenu = function(e, title, type, data) {
     menu.style.top = e.clientY + 'px';
 };
 
-window.handleContextAction = function(action) {
+window.handleContextAction = function (action) {
     if (!selectedItem) return;
 
     if (action === 'edit_period') {
@@ -651,7 +678,7 @@ window.handleContextAction = function(action) {
         }
     } else if (action === 'delete_task') {
         const targetId = selectedItem.taskId;
-        window.openConfirmModal('行の削除', 'この行（タスク）を完全に削除しますか？', function() {
+        window.openConfirmModal('行の削除', 'この行（タスク）を完全に削除しますか？', function () {
             const targetIndex = state.tasks.findIndex(t => t.id === targetId);
             if (targetIndex !== -1 && targetIndex < state.tasks.length - 1) {
                 state.tasks[targetIndex + 1].mergeAboveKoshu = false;
@@ -676,13 +703,13 @@ window.handleContextAction = function(action) {
     } else if (action === 'edit_text') {
         const txt = state.texts.find(t => t.id === selectedItem.textId);
         if (txt) {
-            window.openTextInputModal('テキストの文字を編集', txt.text, function(val) {
+            window.openTextInputModal('テキストの文字を編集', txt.text, function (val) {
                 if (val) { txt.text = val; window.saveStateToHistory(); renderAll(); }
             });
         }
     } else if (action === 'delete_text') {
         const targetTextId = selectedItem.textId;
-        window.openConfirmModal('削除', 'このテキストを削除しますか？', function() {
+        window.openConfirmModal('削除', 'このテキストを削除しますか？', function () {
             state.texts = state.texts.filter(t => t.id !== targetTextId);
             window.saveStateToHistory(); renderAll();
         });
@@ -692,14 +719,14 @@ window.handleContextAction = function(action) {
     document.getElementById('custom-context-menu').style.display = 'none';
 };
 
-window.handleRowContextMenu = function(e, taskId, taskNo, koshu) {
+window.handleRowContextMenu = function (e, taskId, taskNo, koshu) {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'color') return;
     const title = `行アクション (No.${taskNo} ${koshu || '名称未設定'})`;
     window.showContextMenu(e, title, 'task', { taskId });
 };
 
 // --- デバッグ用：書式設定状態の確認 ---
-window.debugFormatState = function() {
+window.debugFormatState = function () {
     console.group('[書式デバッグ]');
     console.log('selectedItem:', JSON.stringify(selectedItem));
     console.log('savedSelectionNode:', savedSelectionNode ?
@@ -718,7 +745,7 @@ window.debugFormatState = function() {
     console.groupEnd();
 };
 
-window.testFormatFix = function() {
+window.testFormatFix = function () {
     console.group('[書式修正テスト]');
     let passed = 0, failed = 0;
 
@@ -739,12 +766,12 @@ window.testFormatFix = function() {
     if (testTaskId) {
         window.selectInput('cell', testTaskId, 'koshu');
         const beforeColor = (state.tasks[0].styles && state.tasks[0].styles.koshu &&
-                             state.tasks[0].styles.koshu.color) || null;
+            state.tasks[0].styles.koshu.color) || null;
         const testColor = '#ff0000';
         savedSelectionRange = null; savedSelectionNode = null;
         window.handleFormatChange('color', testColor);
         const afterColor = state.tasks[0].styles && state.tasks[0].styles.koshu &&
-                           state.tasks[0].styles.koshu.color;
+            state.tasks[0].styles.koshu.color;
         if (afterColor === testColor) {
             console.log('✓ テスト2 PASS: セルの文字色が正しく保存された');
             passed++;
