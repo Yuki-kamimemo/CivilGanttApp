@@ -123,7 +123,9 @@ class Api:
 
         # 全ての矢印の繋がりをリストアップ
         for pid, p in periods_dict.items():
-            deps = [d.strip() for d in p.get("dep", "").split(",") if d.strip()]
+            raw_dep = p.get("dep", "")
+            raw_dep_str = str(raw_dep) if raw_dep is not None else ""
+            deps = [d.strip() for d in raw_dep_str.split(",") if d.strip()]
             for d in deps:
                 if d in periods_dict:
                     all_edges.append((d, pid))
@@ -135,20 +137,22 @@ class Api:
         
         if connected_pids:
             # 繋がりがあるタスクの中で、一番遅い終了日を探す
-            max_end = max([periods_dict[pid].get("end", "") for pid in connected_pids if periods_dict[pid].get("end")])
-            # その日付で終わるタスク（経路のゴール）を特定
-            terminals = [pid for pid in connected_pids if periods_dict[pid].get("end") == max_end]
-            
-            queue = list(terminals)
-            visited = set(terminals)
-            # ゴールから遡ってクリティカルパスの経路を特定する
-            while queue:
-                curr = queue.pop(0)
-                for p in preds[curr]:
-                    critical_edges.add((p, curr))
-                    if p not in visited:
-                        visited.add(p)
-                        queue.append(p)
+            end_dates = [periods_dict[pid].get("end") for pid in connected_pids if periods_dict[pid].get("end")]
+            if end_dates:
+                max_end = max(end_dates)
+                # その日付で終わるタスク（経路のゴール）を特定
+                terminals = [pid for pid in connected_pids if periods_dict[pid].get("end") == max_end]
+                
+                queue = list(terminals)
+                visited = set(terminals)
+                # ゴールから遡ってクリティカルパスの経路を特定する
+                while queue:
+                    curr = queue.pop(0)
+                    for p in preds[curr]:
+                        critical_edges.add((p, curr))
+                        if p not in visited:
+                            visited.add(p)
+                            queue.append(p)
 
         daily_tabs = state.get("dailyNoteTabs", [])
         if not daily_tabs:
