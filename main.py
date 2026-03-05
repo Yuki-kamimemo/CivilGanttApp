@@ -469,7 +469,7 @@ def start_app():
         js_api=api
     )
     api._window = window 
-    webview.start(debug=False)
+    webview.start(debug=True)
 
 if __name__ == '__main__':
     start_app()

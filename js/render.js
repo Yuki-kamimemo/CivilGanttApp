@@ -674,6 +674,8 @@ function drawTextBoxes(chartArea) {
 
             e.stopPropagation();
             selectedItem = { type: 'text', textId: txt.id };
+            // テキストボックスがeditingモードでない場合、以前の選択範囲を消去する
+            if (window.clearSavedSelection) window.clearSavedSelection();
             window.updateFormatToolbar();
             document.querySelectorAll('.chart-text-box').forEach(el => el.classList.remove('selected'));
             div.classList.add('selected');

@@ -292,8 +292,17 @@ window.handleFormatChange = function(prop, value) {
     window.updateFormatToolbar();
 };
 
+window.clearSavedSelection = function() {
+    savedSelectionRange = null;
+    savedSelectionNode = null;
+};
+
 window.selectInput = function(type, taskId = null, field = null) {
     selectedItem = { type: type, taskId: taskId, field: field };
+    // 新しい要素が選択されたとき、以前のcontentEditable編集セッションの
+    // 選択範囲を消去する。これにより書式が誤った要素に適用されるのを防ぐ。
+    savedSelectionRange = null;
+    savedSelectionNode = null;
     window.updateFormatToolbar();
 };
 
@@ -564,4 +573,71 @@ window.handleRowContextMenu = function(e, taskId, taskNo, koshu) {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'color') return;
     const title = `行アクション (No.${taskNo} ${koshu || '名称未設定'})`;
     window.showContextMenu(e, title, 'task', { taskId });
+};
+
+// --- デバッグ用：書式設定状態の確認 ---
+window.debugFormatState = function() {
+    console.group('[書式デバッグ]');
+    console.log('selectedItem:', JSON.stringify(selectedItem));
+    console.log('savedSelectionNode:', savedSelectionNode ?
+        (savedSelectionNode.id || savedSelectionNode.className || savedSelectionNode.tagName) : 'null');
+    console.log('savedSelectionRange:', savedSelectionRange ? '設定あり' : 'null');
+
+    if (selectedItem && selectedItem.type === 'cell') {
+        const task = state.tasks.find(t => t.id === selectedItem.taskId);
+        const styles = task && task.styles ? task.styles[selectedItem.field] : null;
+        console.log('セルスタイル:', JSON.stringify(styles));
+    } else if (selectedItem && selectedItem.type === 'text') {
+        const txt = state.texts.find(t => t.id === selectedItem.textId);
+        console.log('テキストボックススタイル:', txt ?
+            { color: txt.color, fontWeight: txt.fontWeight, backgroundColor: txt.backgroundColor } : 'null');
+    }
+    console.groupEnd();
+};
+
+window.testFormatFix = function() {
+    console.group('[書式修正テスト]');
+    let passed = 0, failed = 0;
+
+    // テスト1: selectInput後にsavedSelectionRangeが消去されるか
+    savedSelectionRange = { collapsed: false }; // ダミーの選択範囲
+    savedSelectionNode = document.getElementById('project-notes');
+    window.selectInput('cell', 'test_id', 'koshu');
+    if (savedSelectionRange === null && savedSelectionNode === null) {
+        console.log('✓ テスト1 PASS: selectInput後にsavedSelectionRangeが消去された');
+        passed++;
+    } else {
+        console.error('✗ テスト1 FAIL: savedSelectionRangeが消去されていない');
+        failed++;
+    }
+
+    // テスト2: selectedItemがcellの場合、cell stylesに書式が保存されるか
+    const testTaskId = state.tasks[0] && state.tasks[0].id;
+    if (testTaskId) {
+        window.selectInput('cell', testTaskId, 'koshu');
+        const beforeColor = (state.tasks[0].styles && state.tasks[0].styles.koshu &&
+                             state.tasks[0].styles.koshu.color) || null;
+        const testColor = '#ff0000';
+        savedSelectionRange = null; savedSelectionNode = null;
+        window.handleFormatChange('color', testColor);
+        const afterColor = state.tasks[0].styles && state.tasks[0].styles.koshu &&
+                           state.tasks[0].styles.koshu.color;
+        if (afterColor === testColor) {
+            console.log('✓ テスト2 PASS: セルの文字色が正しく保存された');
+            passed++;
+        } else {
+            console.error('✗ テスト2 FAIL: セルの文字色が保存されていない。値:', afterColor);
+            failed++;
+        }
+        // テスト後のデータを元に戻す
+        if (state.tasks[0].styles && state.tasks[0].styles.koshu) {
+            state.tasks[0].styles.koshu.color = beforeColor;
+        }
+    } else {
+        console.warn('スキップ: タスクが存在しない');
+    }
+
+    console.log(`結果: ${passed}件成功 / ${failed}件失敗`);
+    console.groupEnd();
+    return failed === 0;
 };
