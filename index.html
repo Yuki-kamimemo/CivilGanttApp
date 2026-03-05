@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>工程表カレンダー</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
 </head>
 <body>
     <div class="menubar print-hide">
@@ -194,9 +195,17 @@
                 <div id="text-only-formats" style="display: flex; gap: 4px; align-items: center; opacity: 0.5; pointer-events: none; transition: opacity 0.2s;">
                     <div class="toolbar-divider"></div>
                     <button type="button" class="format-btn" id="btn-bold" onclick="window.handleFormatChange('fontWeight', 'bold')" title="太字" style="font-weight: bold;">B</button>
-                    <input type="color" id="toolbar-text-color" onchange="window.handleFormatChange('color', this.value)" title="文字色">
-                    <div style="position: relative; display: inline-block;">
-                        <input type="color" id="toolbar-bg-color" onchange="window.handleFormatChange('backgroundColor', this.value)" title="塗りつぶし色">
+                    <div class="color-input-group">
+                        <button type="button" class="color-palette-trigger" onclick="window.showColorPalette(event,'color')" title="文字色をプリセットから選択">
+                            <span class="color-preview-swatch" id="preview-color" style="background:#212529;"></span>▼
+                        </button>
+                        <input type="color" id="toolbar-text-color" onchange="window.handleFormatChange('color', this.value)" title="文字色（カスタム）">
+                    </div>
+                    <div class="color-input-group">
+                        <button type="button" class="color-palette-trigger" onclick="window.showColorPalette(event,'backgroundColor')" title="塗りつぶし色をプリセットから選択">
+                            <span class="color-preview-swatch" id="preview-backgroundColor" style="background:#ffffff; background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%); background-size:6px 6px; background-position:0 0,0 3px,3px -3px,-3px 0;"></span>▼
+                        </button>
+                        <input type="color" id="toolbar-bg-color" onchange="window.handleFormatChange('backgroundColor', this.value)" title="塗りつぶし色（カスタム）">
                         <button type="button" class="format-btn clear-bg-btn" onclick="window.handleFormatChange('backgroundColor', 'transparent')" title="塗りつぶしなし">✖</button>
                     </div>
 
@@ -221,7 +230,12 @@
                         <option value="dotted">点線</option>
                     </select>
                     <input type="number" id="toolbar-border-width" onchange="window.handleFormatChange('borderWidth', this.value)" title="枠線の太さ" min="1" max="10">
-                    <input type="color" id="toolbar-border-color" onchange="window.handleFormatChange('borderColor', this.value)" title="枠線の色">
+                    <div class="color-input-group">
+                        <button type="button" class="color-palette-trigger" onclick="window.showColorPalette(event,'borderColor')" title="枠線色をプリセットから選択">
+                            <span class="color-preview-swatch" id="preview-borderColor" style="background:#6c757d;"></span>▼
+                        </button>
+                        <input type="color" id="toolbar-border-color" onchange="window.handleFormatChange('borderColor', this.value)" title="枠線の色（カスタム）">
+                    </div>
                 </div>
             </div>
 
@@ -307,6 +321,10 @@
             <div id="project-notes" contenteditable="true" onfocus="window.selectInput('notes')" onblur="window.handleNotesChange()" style="width: 100%; height: 100%; box-sizing: border-box; padding: 5px; outline: none; overflow-y: auto;"></div>
         </div>
         
+    </div>
+
+    <div id="color-palette-popup">
+        <div class="color-swatches-grid" id="color-swatches-grid"></div>
     </div>
 
     <script src="js/globals.js?ver=2"></script>

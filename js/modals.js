@@ -101,6 +101,72 @@ window.savePeriodModal = function() {
 };
 
 // ---------------------------------------------------
+// カラーパレット
+// ---------------------------------------------------
+const PALETTE_COLORS = [
+    '#000000', '#343a40', '#6c757d', '#adb5bd', '#ffffff',
+    '#dc3545', '#fd7e14', '#ffc107', '#198754', '#0d6efd'
+];
+
+window.showColorPalette = function(event, prop) {
+    event.stopPropagation();
+    const popup = document.getElementById('color-palette-popup');
+    // 同じボタンを再クリックしたら閉じる
+    if (popup.dataset.prop === prop && popup.style.display !== 'none') {
+        popup.style.display = 'none';
+        return;
+    }
+    popup.dataset.prop = prop;
+
+    const grid = document.getElementById('color-swatches-grid');
+    grid.innerHTML = '';
+
+    // 塗りつぶし色のみ「なし」スウォッチを先頭に追加
+    if (prop === 'backgroundColor') {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'color-swatch transparent-swatch';
+        clearBtn.title = '塗りつぶしなし (transparent)';
+        clearBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.handleFormatChange(prop, 'transparent');
+            popup.style.display = 'none';
+        };
+        grid.appendChild(clearBtn);
+    }
+
+    PALETTE_COLORS.forEach(color => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'color-swatch';
+        btn.style.backgroundColor = color;
+        btn.title = color;
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            // カラーピッカーの値も同期
+            const inputId = { color: 'toolbar-text-color', backgroundColor: 'toolbar-bg-color', borderColor: 'toolbar-border-color' }[prop];
+            const input = document.getElementById(inputId);
+            if (input) input.value = color;
+            window.handleFormatChange(prop, color);
+            popup.style.display = 'none';
+        };
+        grid.appendChild(btn);
+    });
+
+    // ポップアップの表示位置をボタンの直下に設定
+    const rect = event.currentTarget.getBoundingClientRect();
+    popup.style.left = rect.left + 'px';
+    popup.style.top  = (rect.bottom + 4) + 'px';
+    popup.style.display = 'block';
+};
+
+// パレット外クリックで閉じる
+document.addEventListener('click', () => {
+    const popup = document.getElementById('color-palette-popup');
+    if (popup) popup.style.display = 'none';
+});
+
+// ---------------------------------------------------
 // 書式設定（ツールバー）
 // ---------------------------------------------------
 let savedSelectionRange = null;
@@ -117,6 +183,24 @@ document.addEventListener('selectionchange', () => {
         }
     }
 });
+
+// -------------------------------------------------------
+// ツールバー・パレットのクリックでcontentEditableのフォーカスを
+// 失わないようにする（選択テキストへの書式適用を可能にする）
+// -------------------------------------------------------
+const _formatToolbar = document.querySelector('.format-toolbar');
+if (_formatToolbar) {
+    _formatToolbar.addEventListener('mousedown', (e) => {
+        // input・select は通常のフォーカス動作が必要なので対象外
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+            e.preventDefault();
+        }
+    });
+}
+const _colorPalettePopup = document.getElementById('color-palette-popup');
+if (_colorPalettePopup) {
+    _colorPalettePopup.addEventListener('mousedown', (e) => e.preventDefault());
+}
 
 window.updateFormatToolbar = function() {
     const textOnlyGroup = document.getElementById('text-only-formats');
@@ -143,11 +227,32 @@ window.updateFormatToolbar = function() {
         const t = target || {};
         document.getElementById('toolbar-font-family').value = t.fontFamily || state.globalFontFamily || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
         document.getElementById('toolbar-font-size').value = t.fontSize || state.globalFontSize || 13;
-        document.getElementById('toolbar-text-color').value = t.color || '#212529';
-        document.getElementById('toolbar-bg-color').value = t.backgroundColor || 'transparent';
+
+        const textColor = t.color || '#212529';
+        document.getElementById('toolbar-text-color').value = textColor;
+        const previewColor = document.getElementById('preview-color');
+        if (previewColor) { previewColor.style.backgroundImage = ''; previewColor.style.backgroundColor = textColor; }
+
+        const bgColor = (t.backgroundColor && t.backgroundColor !== 'transparent') ? t.backgroundColor : null;
+        document.getElementById('toolbar-bg-color').value = bgColor || '#ffffff';
+        const previewBg = document.getElementById('preview-backgroundColor');
+        if (previewBg) {
+            if (bgColor) {
+                previewBg.style.backgroundImage = ''; previewBg.style.backgroundColor = bgColor;
+            } else {
+                previewBg.style.backgroundColor = 'white';
+                previewBg.style.backgroundImage = 'linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)';
+                previewBg.style.backgroundSize = '6px 6px';
+                previewBg.style.backgroundPosition = '0 0,0 3px,3px -3px,-3px 0';
+            }
+        }
+
         document.getElementById('toolbar-border-style').value = t.borderStyle || 'solid';
         document.getElementById('toolbar-border-width').value = t.borderWidth !== undefined ? t.borderWidth : 1;
-        document.getElementById('toolbar-border-color').value = t.borderColor || '#6c757d';
+        const borderColor = t.borderColor || '#6c757d';
+        document.getElementById('toolbar-border-color').value = borderColor;
+        const previewBorder = document.getElementById('preview-borderColor');
+        if (previewBorder) { previewBorder.style.backgroundImage = ''; previewBorder.style.backgroundColor = borderColor; }
 
         document.getElementById('btn-bold').classList.toggle('active', t.fontWeight === 'bold');
 
@@ -183,12 +288,30 @@ window.handleFormatChange = function(prop, value) {
     const selection = window.getSelection();
     let activeEl = document.activeElement;
 
-    if (savedSelectionRange && savedSelectionNode && savedSelectionNode.isContentEditable) {
-        if (!activeEl || !activeEl.isContentEditable) {
-            savedSelectionNode.focus();
-            selection.removeAllRanges();
-            selection.addRange(savedSelectionRange);
-            activeEl = savedSelectionNode;
+    if (savedSelectionRange && savedSelectionNode) {
+        // chart-text-box はカラーピッカー等で blur すると contentEditable=false になるため
+        // 一時的に再有効化して選択テキストへの書式適用を可能にする
+        const isChartTextBox = savedSelectionNode.classList &&
+                               savedSelectionNode.classList.contains('chart-text-box');
+        if (savedSelectionNode.isContentEditable || isChartTextBox) {
+            if (!activeEl || !activeEl.isContentEditable) {
+                try {
+                    if (isChartTextBox && !savedSelectionNode.isContentEditable) {
+                        savedSelectionNode.contentEditable = 'true';
+                    }
+                    savedSelectionNode.focus();
+                    selection.removeAllRanges();
+                    selection.addRange(savedSelectionRange);
+                    activeEl = savedSelectionNode;
+                } catch (e) {
+                    // rangeが無効な場合はクリアして通常パスへ
+                    if (isChartTextBox && savedSelectionNode) {
+                        savedSelectionNode.contentEditable = 'false';
+                    }
+                    savedSelectionRange = null;
+                    savedSelectionNode = null;
+                }
+            }
         }
     }
 
