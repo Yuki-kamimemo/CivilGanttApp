@@ -72,7 +72,7 @@ function renderAll() {
 
     renderCalendarHeader();
     renderTable();
-    renderChart();
+    renderChart(true); // renderAll 側でスクロール復元を行うため、renderChart 内での復元はスキップする
     renderDailyNotes();
 
     // ★追加：再描画が終わった直後にスクロール位置を復元する
@@ -257,11 +257,11 @@ function renderTable() {
     let shubetsuRowspans = new Array(state.tasks.length).fill(1);
     for (let i = state.tasks.length - 1; i > 0; i--) {
         if (state.tasks[i].mergeAboveKoshu) {
-            koshuRowspans[i-1] += koshuRowspans[i];
+            koshuRowspans[i - 1] += koshuRowspans[i];
             koshuRowspans[i] = 0;
         }
         if (state.tasks[i].mergeAboveShubetsu) {
-            shubetsuRowspans[i-1] += shubetsuRowspans[i];
+            shubetsuRowspans[i - 1] += shubetsuRowspans[i];
             shubetsuRowspans[i] = 0;
         }
     }
@@ -290,7 +290,7 @@ function renderTable() {
 
         // 書式スタイルの組み立て
         const st = task.styles || {};
-        const createCss = (obj) => `color:${obj?.color||''}; font-weight:${obj?.fontWeight||''}; font-size:${obj?.fontSize?obj.fontSize+'px':''}; font-family:${obj?.fontFamily||''}; background-color:${obj?.backgroundColor||''}; text-align:${obj?.textAlign||''};`;
+        const createCss = (obj) => `color:${obj?.color || ''}; font-weight:${obj?.fontWeight || ''}; font-size:${obj?.fontSize ? obj.fontSize + 'px' : ''}; font-family:${obj?.fontFamily || ''}; background-color:${obj?.backgroundColor || ''}; text-align:${obj?.textAlign || ''};`;
         const kCss = createCss(st.koshu);
         const shCss = createCss(st.shubetsu);
         const saCss = createCss(st.saibetsu);
@@ -376,8 +376,9 @@ function aggregatePeriods(periods) {
     let minStart = null, maxEnd = null, totalWorkDays = 0, weightedProgress = 0;
 
     periods.forEach(p => {
-        if (p.start && (!minStart || new Date(p.start) < new Date(minStart))) minStart = p.start;
-        if (p.end && (!maxEnd || new Date(p.end) > new Date(maxEnd))) maxEnd = p.end;
+        // ISO-8601形式の日付文字列はそのまま文字列比較できる（new Date()生成不要）
+        if (p.start && (!minStart || p.start < minStart)) minStart = p.start;
+        if (p.end && (!maxEnd || p.end > maxEnd)) maxEnd = p.end;
         if (p.start && p.end) {
             const d = calcDiffDays(p.start, p.end) || 0;
             totalWorkDays += d;
@@ -392,11 +393,15 @@ function aggregatePeriods(periods) {
 // ---------------------------------------------------
 // 【リファクタリング】 カレンダー描画（画面右側）
 // ---------------------------------------------------
-function renderChart() {
-    // ★追加：再描画の前にスクロール位置を記憶する
+function renderChart(skipScrollRestore = false) {
+    // ★追加：再描画の前にスクロール位置を記憶する（スキップされない場合のみ）
     const rightContainer = document.getElementById('right-container');
-    const savedScrollTop = rightContainer ? rightContainer.scrollTop : 0;
-    const savedScrollLeft = rightContainer ? rightContainer.scrollLeft : 0;
+    let savedScrollTop = 0, savedScrollLeft = 0;
+
+    if (!skipScrollRestore && rightContainer) {
+        savedScrollTop = rightContainer.scrollTop;
+        savedScrollLeft = rightContainer.scrollLeft;
+    }
 
     const chartArea = document.getElementById('chart-area');
     const arrowLayer = document.getElementById('arrow-layer');
@@ -419,7 +424,7 @@ function renderChart() {
 
     state.tasks.forEach((task, index) => {
         const trDOM = tableRows[index];
-        if(!trDOM) return;
+        if (!trDOM) return;
         const rowHeight = trDOM.offsetHeight;
 
         // 行（背景）の作成
@@ -452,8 +457,8 @@ function renderChart() {
     // 7. テキストボックスの描画
     drawTextBoxes(chartArea);
 
-    // ★追加：スクロール位置を復元する
-    if (rightContainer) {
+    // ★追加：スクロール位置を復元する（スキップされない場合のみ）
+    if (!skipScrollRestore && rightContainer) {
         rightContainer.scrollTop = savedScrollTop;
         rightContainer.scrollLeft = savedScrollLeft;
     }
@@ -586,7 +591,7 @@ function drawBarsForTask(task, chartRow, rowHeight, currentYOffset, calculatedBa
 
             const textSpan = document.createElement('span');
             textSpan.className = 'task-bar-text';
-            textSpan.textContent = task.periods.length > 1 ? `${displayName} (${pIndex+1})` : displayName;
+            textSpan.textContent = task.periods.length > 1 ? `${displayName} (${pIndex + 1})` : displayName;
             bar.appendChild(textSpan);
 
             const resizeHandle = document.createElement('div');
@@ -609,7 +614,7 @@ function drawBarsForTask(task, chartRow, rowHeight, currentYOffset, calculatedBa
 // 今日の赤い線を引く
 function drawTodayLine(chartArea, dStart, dEnd) {
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
     if (today >= dStart && today <= dEnd) {
         let todayX = dateToPx(formatDate(today));
         if (state.viewScale === 'day') {
@@ -725,6 +730,9 @@ function drawTextBoxes(chartArea) {
 }
 
 function drawArrows(bars, svgLayer) {
+    // O(n²)のfind()をO(1)のMap参照に変換
+    const barMap = new Map(bars.map(b => [b.periodId, b]));
+
     bars.forEach(bar => {
         if (!bar.dep) return;
         const depList = bar.dep.toString().split(',');
@@ -732,7 +740,7 @@ function drawArrows(bars, svgLayer) {
             const depPid = depStr.trim();
             if (!depPid) return;
 
-            const predBar = bars.find(b => b.periodId === depPid);
+            const predBar = barMap.get(depPid);  // O(1)での参照
 
             if (predBar) {
                 const startX = predBar.x2, startY = predBar.y;
@@ -777,7 +785,7 @@ function drawArrows(bars, svgLayer) {
                 hitPath.addEventListener('contextmenu', (e) => e.preventDefault());
 
                 const arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                arrowHead.setAttribute("points", `${endX},${endY} ${endX-6},${endY-4} ${endX-6},${endY+4}`);
+                arrowHead.setAttribute("points", `${endX},${endY} ${endX - 6},${endY - 4} ${endX - 6},${endY + 4}`);
                 arrowHead.setAttribute("fill", "#ff6b6b");
                 arrowHead.setAttribute("pointer-events", "none");
 
@@ -833,10 +841,17 @@ function drawArrows(bars, svgLayer) {
                                 const targetPeriod = targetTask.periods.find(p => p.pid === targetPeriodId);
 
                                 if (targetTask && targetPeriod) {
-                                    let currentDep = targetPeriod.dep ? targetPeriod.dep.toString().split(',').map(s=>s.trim()) : [];
+                                    let currentDep = targetPeriod.dep ? targetPeriod.dep.toString().split(',').map(s => s.trim()) : [];
                                     if (!currentDep.includes(depPid)) {
-                                        currentDep.push(depPid);
-                                        targetPeriod.dep = currentDep.join(', ');
+                                        if (window.isCircularDependency && window.isCircularDependency(depPid, targetPeriodId)) {
+                                            alert('循環依存になるため接続できません。');
+                                            // エラー時は元の接続に戻す
+                                            oldDeps.push(depPid);
+                                            sourcePeriod.dep = oldDeps.join(', ');
+                                        } else {
+                                            currentDep.push(depPid);
+                                            targetPeriod.dep = currentDep.join(', ');
+                                        }
                                     }
                                 }
                             }

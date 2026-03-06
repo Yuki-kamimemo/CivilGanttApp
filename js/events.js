@@ -136,9 +136,13 @@ function setupLinkEvents(handle, task, period, startX, startY) {
                         const sourcePid = linkingState.sourcePeriod.pid;
                         let deps = currentDep ? currentDep.split(',').map(s => s.trim()) : [];
                         if (!deps.includes(sourcePid)) {
-                            if (currentDep) currentDep += ", " + sourcePid;
-                            else currentDep = sourcePid;
-                            window.handlePeriodChange(targetTaskId, targetPeriodId, 'dep', currentDep);
+                            if (window.isCircularDependency && window.isCircularDependency(sourcePid, targetPeriodId)) {
+                                alert('循環依存になるため接続できません。（A→B→Aのようなループ等）');
+                            } else {
+                                if (currentDep) currentDep += ", " + sourcePid;
+                                else currentDep = sourcePid;
+                                window.handlePeriodChange(targetTaskId, targetPeriodId, 'dep', currentDep);
+                            }
                         }
                     }
                 }
@@ -164,19 +168,19 @@ function setupTableResizing() {
 
         let startX, startWidth;
 
-        resizer.addEventListener('mousedown', function(e) {
+        resizer.addEventListener('mousedown', function (e) {
             startX = e.clientX;
             startWidth = col.offsetWidth;
 
             cols.forEach(c => c.style.width = c.offsetWidth + 'px');
             resizer.classList.add('resizing');
 
-            const mouseMoveHandler = function(e) {
+            const mouseMoveHandler = function (e) {
                 const newWidth = startWidth + (e.clientX - startX);
                 if (newWidth > 30) col.style.width = newWidth + 'px';
             };
 
-            const mouseUpHandler = function() {
+            const mouseUpHandler = function () {
                 resizer.classList.remove('resizing');
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);

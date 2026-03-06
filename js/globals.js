@@ -37,36 +37,64 @@ function showHolidayWarning() {
     }, 6000);
 }
 
+/**
+ * alert() の代わりに使う非ブロッキングのトースト通知。
+ * 保存完了などの軽い通知に使う。
+ */
+function showToastNotification(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    // アニメーションのために少し遅らせてクラスを付加
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 2500);
+}
+
 // ---------------------------------------------------
 // 1. データモデルと履歴管理 (State)
 // ---------------------------------------------------
-let state = {
-    projectName: '',
-    companyName: '',
-    viewRange: 'month',
-    viewScale: 'day',
 
-    projectStart: '',
-    projectEnd: '',
-    displayStart: '',
-    displayEnd: '',
+/**
+ * デフォルトのstateオブジェクトを生成する関数。
+ * globals.js の初期化と handleNewFile() の両方で使用することで
+ * state の初期定義を一元管理する。
+ */
+window.createDefaultState = function () {
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-    notes: '',
-    notesCollapsed: false,
-
-    dailyNoteTabs: [
-        { id: 'tab_general', name: '作業全般・天候' },
-        { id: 'tab_safety', name: '安全管理・行事' }
-    ],
-    activeDailyNoteTab: 'tab_general',
-    dailyNotesData: { 'tab_general': {}, 'tab_safety': {} },
-
-    holidays: { sundays: true, saturdays: false, nationalHolidays: true, custom: [] },
-    tasks: [],
-    texts: [],
-    shapes: [],
-    autoCreateBar: true // 自動作成のオンオフ状態
+    return {
+        projectName: '', companyName: '', viewRange: 'month', viewScale: 'day',
+        projectStart: formatDate(today), projectEnd: formatDate(nextMonth),
+        displayStart: formatDate(today), displayEnd: formatDate(nextMonth),
+        notes: '', notesCollapsed: false,
+        dailyNoteTabs: [
+            { id: 'tab_general', name: '作業全般・天候' },
+            { id: 'tab_safety', name: '安全管理・行事' }
+        ],
+        activeDailyNoteTab: 'tab_general',
+        dailyNotesData: { 'tab_general': {}, 'tab_safety': {} },
+        holidays: { sundays: true, saturdays: false, nationalHolidays: true, custom: [] },
+        tasks: [
+            {
+                id: generateId(), no: 1, koshu: "", shubetsu: "", saibetsu: "", collapsed: false,
+                mergeAboveKoshu: false, mergeAboveShubetsu: false,
+                periods: [{ pid: generateId(), dep: "", start: "", end: "", progress: 0, color: "#3b82f6", displayRow: 0 }]
+            }
+        ],
+        texts: [], shapes: [],
+        autoCreateBar: true,
+        globalFontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        globalFontSize: 13
+    };
 };
+
+let state = window.createDefaultState();
 
 // 描画ツールの状態管理
 let currentTool = 'pointer'; // 初期状態は「選択・操作」ツール
@@ -106,25 +134,14 @@ window.setBarCreationMode = function (mode) {
     const btnCurrent = document.getElementById('mode-current-change');
 
     if (btnNormal && btnNew && btnCurrent) {
-        [btnNormal, btnNew, btnCurrent].forEach(btn => {
-            btn.classList.remove('active');
-            btn.style.fontWeight = 'normal';
-            btn.style.borderColor = 'transparent';
-            btn.style.backgroundColor = 'transparent';
-        });
+        [btnNormal, btnNew, btnCurrent].forEach(btn => btn.classList.remove('active'));
 
         if (mode === 'normal') {
-            btnNormal.style.fontWeight = 'bold';
-            btnNormal.style.borderColor = '#0d6efd';
-            btnNormal.style.backgroundColor = '#cce5ff';
+            btnNormal.classList.add('active');
         } else if (mode === 'new_change') {
-            btnNew.style.fontWeight = 'bold';
-            btnNew.style.borderColor = '#dc3545';
-            btnNew.style.backgroundColor = '#f8d7da';
+            btnNew.classList.add('active');
         } else if (mode === 'current_change') {
-            btnCurrent.style.fontWeight = 'bold';
-            btnCurrent.style.borderColor = '#dc3545';
-            btnCurrent.style.backgroundColor = '#f8d7da';
+            btnCurrent.classList.add('active');
         }
     }
 };
@@ -180,6 +197,33 @@ function updateUndoRedoUI() {
 
 // 矢印接続中の状態管理（events.jsと共有）
 let linkingState = null;
+
+// 依存関係の循環（ループ）チェック関数
+window.isCircularDependency = function (sourcePid, targetPid) {
+    if (sourcePid === targetPid) return true;
+
+    const visited = new Set();
+    const queue = [sourcePid];
+
+    while (queue.length > 0) {
+        const currentPid = queue.shift();
+        if (currentPid === targetPid) return true;
+
+        if (!visited.has(currentPid)) {
+            visited.add(currentPid);
+            for (const task of state.tasks) {
+                const period = task.periods.find(p => p.pid === currentPid);
+                if (period && period.dep) {
+                    const deps = period.dep.toString().split(',').map(s => s.trim()).filter(Boolean);
+                    for (const dep of deps) {
+                        if (!visited.has(dep)) queue.push(dep);
+                    }
+                }
+            }
+        }
+    }
+    return false;
+};
 
 // ---------------------------------------------------
 // キーボード・マウス操作のイベント設定

@@ -1,15 +1,8 @@
 {
-  "projectName": "令和7年度 一般県道○○線 道路改良工事",
-  "companyName": "株式会社○○建設",
   "viewRange": "custom",
   "viewScale": "day",
-  "projectStart": "2026-04-01",
-  "projectEnd": "2026-09-30",
-  "displayStart": "2026-04-01",
-  "displayEnd": "2026-09-30",
   "notes": "<div>【施工上の留意事項】</div><div>・工事区間の通行確保を最優先とする</div><div>・雨天時は土工作業を中止すること</div><div>・安全管理責任者を常駐させること</div>",
   "notesCollapsed": false,
-  "zoomRatio": 1,
   "dailyNoteTabs": [
     {
       "id": "tab_general",
@@ -47,6 +40,18 @@
       "2026-08-15"
     ]
   },
+  "autoCreateBar": true,
+  "texts": [],
+  "shapes": [],
+  "globalFontFamily": "'Meiryo', sans-serif",
+  "globalFontSize": 13,
+  "projectName": "令和7年度 一般県道○○線 道路改良工事",
+  "companyName": "株式会社○○建設",
+  "projectStart": "2026-04-01",
+  "projectEnd": "2026-09-30",
+  "displayStart": "2026-04-01",
+  "displayEnd": "2026-09-30",
+  "zoomRatio": 1,
   "tasks": [
     {
       "id": "t01",
@@ -401,10 +406,5 @@
         }
       ]
     }
-  ],
-  "texts": [],
-  "shapes": [],
-  "globalFontFamily": "'Meiryo', sans-serif",
-  "globalFontSize": 13,
-  "autoCreateBar": true
+  ]
 }

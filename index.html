@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工程表カレンダー</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Civil Schedule Master</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="print.css" media="print">
     <link rel="icon" href="data:,">
 </head>
+
 <body>
     <div class="menubar print-hide">
         <div class="menu-item">ファイル
@@ -15,18 +18,20 @@
                 <div onclick="window.handleOpenFile()">開く...</div>
                 <div onclick="window.handleOverwriteSave()">上書き保存 (Ctrl+S)</div>
                 <div onclick="window.handleSaveFile()">名前を付けて保存...</div>
-                
-                <div style="height: 1px; background-color: #dee2e6; margin: 4px 0;"></div>
+
+                <div class="menu-separator"></div>
                 <div onclick="window.handleExportExcel()">Excelへエクスポート...</div>
-                
-                <div style="height: 1px; background-color: #dee2e6; margin: 4px 0;"></div>
+
+                <div class="menu-separator"></div>
                 <div onclick="window.openPrintModal()">印刷 / PDF出力...</div>
             </div>
         </div>
         <div class="menu-item">編集
             <div class="dropdown-content">
-                <div id="menu-undo" class="disabled" onclick="if(!this.classList.contains('disabled')) window.undo()">元に戻す (Ctrl+Z)</div>
-                <div id="menu-redo" class="disabled" onclick="if(!this.classList.contains('disabled')) window.redo()">やり直す (Ctrl+Y)</div>
+                <div id="menu-undo" class="disabled" onclick="if(!this.classList.contains('disabled')) window.undo()">
+                    元に戻す (Ctrl+Z)</div>
+                <div id="menu-redo" class="disabled" onclick="if(!this.classList.contains('disabled')) window.redo()">
+                    やり直す (Ctrl+Y)</div>
             </div>
         </div>
         <div class="menu-item">ツール
@@ -43,9 +48,10 @@
     </div>
 
     <div id="custom-context-menu" class="context-menu">
-        <div id="ctx-menu-title" style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; color: #6c757d; font-size: 11px;">項目名</div>
+        <div id="ctx-menu-title" class="ctx-menu-title">
+            項目名</div>
         <div id="ctx-menu-actions">
-            </div>
+        </div>
     </div>
 
     <div id="holiday-modal" class="modal-overlay">
@@ -90,10 +96,10 @@
     </div>
 
     <div id="text-input-modal" class="modal-overlay">
-        <div class="modal-content" style="width: 300px;">
+        <div class="modal-content modal-content-sm">
             <h3 id="text-input-title">タイトル</h3>
-            <div style="margin-bottom: 15px;">
-                <input type="text" id="text-input-field" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px;">
+            <div class="modal-text-input-container">
+                <input type="text" id="text-input-field" class="modal-text-input-field">
             </div>
             <div class="modal-actions">
                 <button type="button" class="cancel" onclick="window.closeTextInputModal()">キャンセル</button>
@@ -103,12 +109,12 @@
     </div>
 
     <div id="confirm-modal" class="modal-overlay">
-        <div class="modal-content" style="width: 300px;">
-            <h3 id="confirm-title" style="color: #dc3545; border-bottom: 1px solid #dee2e6;">確認</h3>
-            <p id="confirm-message" style="margin-bottom: 20px;">本当に実行しますか？</p>
+        <div class="modal-content modal-content-sm">
+            <h3 id="confirm-title" class="confirm-title">確認</h3>
+            <p id="confirm-message" class="confirm-message">本当に実行しますか？</p>
             <div class="modal-actions">
                 <button type="button" class="cancel" onclick="window.closeConfirmModal()">キャンセル</button>
-                <button type="button" class="save" style="background: #dc3545;" onclick="window.executeConfirmModal()">実行する</button>
+                <button type="button" class="save btn-danger" onclick="window.executeConfirmModal()">実行する</button>
             </div>
         </div>
     </div>
@@ -120,7 +126,7 @@
                 <p style="font-size: 12px; color: #6c757d; margin-top: 0;">用紙に収めたい期間と、カレンダーの縮小率を設定します。</p>
                 <label>印刷開始日: <input type="date" id="modal-print-start"></label>
                 <label>印刷終了日: <input type="date" id="modal-print-end"></label>
-                <label>縮小・拡大率: 
+                <label>縮小・拡大率:
                     <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0" style="width: 80px;">
                     <span style="font-size: 12px; font-weight: normal; margin-left: 5px;">(1.0が標準)</span>
                 </label>
@@ -135,19 +141,21 @@
     <div class="top-panel">
         <div class="top-panel-left">
             <div class="project-info">
-                <label>工事名: <input type="text" id="project-name" placeholder="例: 令和〇〇年度 ○○道路改良工事" onchange="window.handleProjectInfoChange()"></label>
-                <label>事業者名: <input type="text" id="company-name" placeholder="例: 株式会社〇〇建設" onchange="window.handleProjectInfoChange()"></label>
-                <label style="margin-left: 10px;">全体工期: 
-                    <input type="date" id="project-start" onchange="window.handleProjectDateChange()"> ～ 
+                <label>工事名: <input type="text" id="project-name" placeholder="例: 令和〇〇年度 ○○道路改良工事"
+                        onchange="window.handleProjectInfoChange()"></label>
+                <label>事業者名: <input type="text" id="company-name" placeholder="例: 株式会社〇〇建設"
+                        onchange="window.handleProjectInfoChange()"></label>
+                <label style="margin-left: 10px;">全体工期:
+                    <input type="date" id="project-start" onchange="window.handleProjectDateChange()"> ～
                     <input type="date" id="project-end" onchange="window.handleProjectDateChange()">
                 </label>
             </div>
-            
+
             <div class="header-controls print-hide">
-                <label>表示開始日: 
+                <label>表示開始日:
                     <input type="date" id="display-start-date" onchange="window.handleDisplayStartChange()">
                 </label>
-                <label>表示範囲: 
+                <label>表示範囲:
                     <select id="view-range-selector" onchange="window.handleViewRangeChange()">
                         <option value="custom">全体表示（工期に合わせる）</option>
                         <option value="week">1週間</option>
@@ -156,90 +164,119 @@
                         <option value="year">1年</option>
                     </select>
                 </label>
-                
+
                 <div id="display-shift-controls" style="display: flex; gap: 4px; margin-right: 15px;">
                     <button class="shift-btn" onclick="window.shiftDisplay(-1)" title="前の期間へ">◀</button>
                     <button class="shift-btn" onclick="window.shiftDisplay(1)" title="次の期間へ">▶</button>
                 </div>
 
-                <label>表示単位: 
+                <label>表示単位:
                     <select id="view-scale-selector" onchange="window.handleViewScaleChange()">
                         <option value="day">日単位</option>
                         <option value="month">月単位</option>
                     </select>
                 </label>
-            <label style="margin-left: 15px;">カレンダー幅: 
-                    <input type="range" id="zoom-slider" min="0.5" max="5" step="0.1" value="1" oninput="window.handleZoomChange()" style="vertical-align: middle;">
+                <label style="margin-left: 15px;">カレンダー幅:
+                    <input type="range" id="zoom-slider" min="0.5" max="5" step="0.1" value="1"
+                        oninput="window.handleZoomChange()" style="vertical-align: middle;">
                 </label>
-                <label style="margin-left: 15px; cursor: pointer;" title="空白クリック時に自動でバーを作成するかどうかを切り替えます"> 
-                    <input type="checkbox" id="auto-create-bar-cb" onchange="window.handleAutoCreateBarChange()" style="vertical-align: middle;"> 自動バー作成
+                <label style="margin-left: 15px; cursor: pointer;" title="空白クリック時に自動でバーを作成するかどうかを切り替えます">
+                    <input type="checkbox" id="auto-create-bar-cb" onchange="window.handleAutoCreateBarChange()"
+                        style="vertical-align: middle;"> 自動バー作成
                 </label>
-                <div style="display: inline-flex; align-items: center; gap: 5px; margin-left: 20px; border-left: 2px solid #dee2e6; padding-left: 15px;">
-                    <span style="font-size: 13px; margin-right: 5px; font-weight: bold; white-space: nowrap;">バー作成モード:</span>
-                    <button type="button" class="format-btn active" id="mode-normal" onclick="window.setBarCreationMode('normal')" title="予定（一番上の段）を作成します" style="width: auto; padding: 2px 8px; color: #0d6efd; border: 2px solid #0d6efd; background-color: #cce5ff; font-weight: bold; border-radius: 4px; white-space: nowrap;">予定(青)</button>
-                    <button type="button" class="format-btn" id="mode-new-change" onclick="window.setBarCreationMode('new_change')" title="新しく下の段に変更工程を作成します" style="width: auto; padding: 2px 8px; color: #dc3545; border: 2px solid transparent; background-color: transparent; border-radius: 4px; white-space: nowrap;">段追加(赤)</button>
-                    <button type="button" class="format-btn" id="mode-current-change" onclick="window.setBarCreationMode('current_change')" title="最新の変更段に期間を作成します" style="width: auto; padding: 2px 8px; color: #dc3545; border: 2px solid transparent; background-color: transparent; border-radius: 4px; white-space: nowrap;">変更追加(赤)</button>
+                <div class="mode-btn-container">
+                    <span class="mode-btn-label">バー作成モード:</span>
+                    <button type="button" class="mode-btn mode-btn-normal active" id="mode-normal"
+                        onclick="window.setBarCreationMode('normal')" title="予定（一番上の段）を作成します">予定(青)</button>
+                    <button type="button" class="mode-btn mode-btn-danger" id="mode-new-change"
+                        onclick="window.setBarCreationMode('new_change')" title="新しく下の段に変更工程を作成します">段追加(赤)</button>
+                    <button type="button" class="mode-btn mode-btn-danger" id="mode-current-change"
+                        onclick="window.setBarCreationMode('current_change')" title="最新の変更段に期間を作成します">変更追加(赤)</button>
                 </div>
-                </div>
+            </div>
             <div class="format-toolbar print-hide" id="format-toolbar">
                 <span class="toolbar-label">書式:</span>
-                <select id="toolbar-font-family" onchange="window.handleFormatChange('fontFamily', this.value)" title="フォント">
+                <select id="toolbar-font-family" onchange="window.handleFormatChange('fontFamily', this.value)"
+                    title="フォント">
                     <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">標準</option>
                     <option value="'Meiryo', sans-serif">メイリオ</option>
                     <option value="'MS PGothic', sans-serif">MS Pゴシック</option>
                     <option value="'Yu Gothic', sans-serif">游ゴシック</option>
                     <option value="serif">明朝体</option>
                 </select>
-                <input type="number" id="toolbar-font-size" onchange="window.handleFormatChange('fontSize', this.value)" title="サイズ" min="8" max="72">
-                
-                <div id="text-only-formats" style="display: flex; gap: 4px; align-items: center; opacity: 0.5; pointer-events: none; transition: opacity 0.2s;">
+                <input type="number" id="toolbar-font-size" onchange="window.handleFormatChange('fontSize', this.value)"
+                    title="サイズ" min="8" max="72">
+
+                <div id="text-only-formats" class="text-only-formats">
                     <div class="toolbar-divider"></div>
-                    <button type="button" class="format-btn" id="btn-bold" onclick="window.handleFormatChange('fontWeight', 'bold')" title="太字" style="font-weight: bold;">B</button>
+                    <button type="button" class="format-btn" id="btn-bold"
+                        onclick="window.handleFormatChange('fontWeight', 'bold')" title="太字"
+                        style="font-weight: bold;">B</button>
                     <div class="color-input-group">
-                        <button type="button" class="color-palette-trigger" onclick="window.showColorPalette(event,'color')" title="文字色をプリセットから選択">
+                        <button type="button" class="color-palette-trigger"
+                            onclick="window.showColorPalette(event,'color')" title="文字色をプリセットから選択">
                             <span class="color-preview-swatch" id="preview-color" style="background:#212529;"></span>▼
                         </button>
-                        <input type="color" id="toolbar-text-color" onchange="window.handleFormatChange('color', this.value)" title="文字色（カスタム）">
+                        <input type="color" id="toolbar-text-color"
+                            onchange="window.handleFormatChange('color', this.value)" title="文字色（カスタム）">
                     </div>
                     <div class="color-input-group">
-                        <button type="button" class="color-palette-trigger" onclick="window.showColorPalette(event,'backgroundColor')" title="塗りつぶし色をプリセットから選択">
-                            <span class="color-preview-swatch" id="preview-backgroundColor" style="background:#ffffff; background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%); background-size:6px 6px; background-position:0 0,0 3px,3px -3px,-3px 0;"></span>▼
+                        <button type="button" class="color-palette-trigger"
+                            onclick="window.showColorPalette(event,'backgroundColor')" title="塗りつぶし色をプリセットから選択">
+                            <span class="color-preview-swatch" id="preview-backgroundColor"
+                                style="background:#ffffff; background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%); background-size:6px 6px; background-position:0 0,0 3px,3px -3px,-3px 0;"></span>▼
                         </button>
-                        <input type="color" id="toolbar-bg-color" onchange="window.handleFormatChange('backgroundColor', this.value)" title="塗りつぶし色（カスタム）">
-                        <button type="button" class="format-btn clear-bg-btn" onclick="window.handleFormatChange('backgroundColor', 'transparent')" title="塗りつぶしなし">✖</button>
+                        <input type="color" id="toolbar-bg-color"
+                            onchange="window.handleFormatChange('backgroundColor', this.value)" title="塗りつぶし色（カスタム）">
+                        <button type="button" class="format-btn clear-bg-btn"
+                            onclick="window.handleFormatChange('backgroundColor', 'transparent')"
+                            title="塗りつぶしなし">✖</button>
                     </div>
 
                     <div class="toolbar-divider"></div>
-                    <button type="button" class="format-btn" id="btn-align-left" onclick="window.handleFormatChange('textAlign', 'left')" title="左揃え">⇤</button>
-                    <button type="button" class="format-btn" id="btn-align-center" onclick="window.handleFormatChange('textAlign', 'center')" title="中央揃え">↔</button>
-                    <button type="button" class="format-btn" id="btn-align-right" onclick="window.handleFormatChange('textAlign', 'right')" title="右揃え">⇥</button>
-                    
-                    <div class="toolbar-divider"></div>
-                    <button type="button" class="format-btn" id="btn-valign-top" onclick="window.handleFormatChange('verticalAlign', 'flex-start')" title="上揃え">↑</button>
-                    <button type="button" class="format-btn" id="btn-valign-middle" onclick="window.handleFormatChange('verticalAlign', 'center')" title="中揃え">↕</button>
-                    <button type="button" class="format-btn" id="btn-valign-bottom" onclick="window.handleFormatChange('verticalAlign', 'flex-end')" title="下揃え">↓</button>
+                    <button type="button" class="format-btn" id="btn-align-left"
+                        onclick="window.handleFormatChange('textAlign', 'left')" title="左揃え">⇤</button>
+                    <button type="button" class="format-btn" id="btn-align-center"
+                        onclick="window.handleFormatChange('textAlign', 'center')" title="中央揃え">↔</button>
+                    <button type="button" class="format-btn" id="btn-align-right"
+                        onclick="window.handleFormatChange('textAlign', 'right')" title="右揃え">⇥</button>
 
                     <div class="toolbar-divider"></div>
-                    <button type="button" class="format-btn" id="btn-writing-mode" onclick="window.handleFormatChange('writingMode', 'toggle')" title="縦書き/横書き切り替え">縦</button>
-                    
+                    <button type="button" class="format-btn" id="btn-valign-top"
+                        onclick="window.handleFormatChange('verticalAlign', 'flex-start')" title="上揃え">↑</button>
+                    <button type="button" class="format-btn" id="btn-valign-middle"
+                        onclick="window.handleFormatChange('verticalAlign', 'center')" title="中揃え">↕</button>
+                    <button type="button" class="format-btn" id="btn-valign-bottom"
+                        onclick="window.handleFormatChange('verticalAlign', 'flex-end')" title="下揃え">↓</button>
+
                     <div class="toolbar-divider"></div>
-                    <select id="toolbar-border-style" onchange="window.handleFormatChange('borderStyle', this.value)" title="枠線の種類">
+                    <button type="button" class="format-btn" id="btn-writing-mode"
+                        onclick="window.handleFormatChange('writingMode', 'toggle')" title="縦書き/横書き切り替え">縦</button>
+
+                    <div class="toolbar-divider"></div>
+                    <select id="toolbar-border-style" onchange="window.handleFormatChange('borderStyle', this.value)"
+                        title="枠線の種類">
                         <option value="none">枠なし</option>
                         <option value="solid">実線</option>
                         <option value="dashed">破線</option>
                         <option value="dotted">点線</option>
                     </select>
-                    <input type="number" id="toolbar-border-width" onchange="window.handleFormatChange('borderWidth', this.value)" title="枠線の太さ" min="1" max="10">
+                    <input type="number" id="toolbar-border-width"
+                        onchange="window.handleFormatChange('borderWidth', this.value)" title="枠線の太さ" min="1" max="10">
                     <div class="color-input-group">
-                        <button type="button" class="color-palette-trigger" onclick="window.showColorPalette(event,'borderColor')" title="枠線色をプリセットから選択">
-                            <span class="color-preview-swatch" id="preview-borderColor" style="background:#6c757d;"></span>▼
+                        <button type="button" class="color-palette-trigger"
+                            onclick="window.showColorPalette(event,'borderColor')" title="枠線色をプリセットから選択">
+                            <span class="color-preview-swatch" id="preview-borderColor"
+                                style="background:#6c757d;"></span>▼
                         </button>
-                        <input type="color" id="toolbar-border-color" onchange="window.handleFormatChange('borderColor', this.value)" title="枠線の色（カスタム）">
+                        <input type="color" id="toolbar-border-color"
+                            onchange="window.handleFormatChange('borderColor', this.value)" title="枠線の色（カスタム）">
                     </div>
                 </div>
             </div>
 
-        </div><div class="stamp-container">
+        </div>
+        <div class="stamp-container">
             <div class="stamp-box">
                 <div class="stamp-title">現場代理人</div>
                 <div class="stamp-title">監理技術者</div>
@@ -248,11 +285,11 @@
             </div>
         </div>
     </div>
-    
+
     <div class="main-container" style="flex-direction: row;">
-        
+
         <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
-            
+
             <div class="gantt-wrapper">
                 <div class="left-pane" id="left-pane">
                     <div class="table-container" id="left-container">
@@ -263,9 +300,10 @@
                                     <th>工種</th>
                                     <th>種別</th>
                                     <th>
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div class="table-h-content">
                                             細別・規格
-                                            <button id="table-toggle-btn" onclick="window.toggleTableDetail()" style="background:none; border:none; cursor:pointer; color:#6c757d; font-size:10px; padding:0 4px;" title="詳細列を折りたたむ">◀</button>
+                                            <button id="table-toggle-btn" class="pane-toggle-btn"
+                                                onclick="window.toggleTableDetail()" title="詳細列を折りたたむ">◀</button>
                                         </div>
                                     </th>
                                     <th>開始日</th>
@@ -293,46 +331,52 @@
             <div class="daily-notes-wrapper">
                 <div class="daily-tabs-header print-hide">
                     <div id="daily-tabs-container"></div>
-                    <button onclick="window.addDailyTab()" title="新しい備考タブを追加" style="border:none; background:transparent; cursor:pointer; padding:0 10px; font-weight:bold; color:#0d6efd; font-size:16px;">＋</button>
+                    <button class="add-tab-btn" onclick="window.addDailyTab()" title="新しい備考タブを追加">＋</button>
                 </div>
-                
+
                 <div class="daily-notes-content">
                     <div id="daily-notes-left">
                         <div class="daily-tab-actions">
                             <span id="current-daily-tab-name" style="font-weight: bold;"></span>
-                            <button onclick="window.editCurrentDailyTab()" class="print-hide" title="タブの名前を変更" style="border:none; background:transparent; cursor:pointer; font-size:14px;">✏️</button>
-                            <button onclick="window.deleteCurrentDailyTab()" class="print-hide" title="このタブを削除" style="border:none; background:transparent; cursor:pointer; font-size:14px; color:#dc3545;">✖</button>
+                            <button onclick="window.editCurrentDailyTab()" class="print-hide icon-btn"
+                                title="タブの名前を変更">✏️</button>
+                            <button onclick="window.deleteCurrentDailyTab()" class="print-hide icon-btn icon-btn-danger"
+                                title="このタブを削除">✖</button>
                         </div>
                     </div>
-                    
+
                     <div id="daily-notes-right">
                         <div id="daily-notes-grid"></div>
                     </div>
                 </div>
             </div>
-            
+
         </div>
 
         <div class="notes-pane" id="notes-pane">
             <div class="notes-header">
                 <span class="notes-title">備考欄</span>
-                <button id="notes-toggle-btn" onclick="window.toggleNotes()" class="print-hide" style="background:none; border:none; cursor:pointer; color:#6c757d; font-size:10px; padding:0 4px;" title="備考欄を折りたたむ">▶</button>
+                <button id="notes-toggle-btn" onclick="window.toggleNotes()" class="print-hide pane-toggle-btn"
+                    title="備考欄を折りたたむ">▶</button>
             </div>
-            <div id="project-notes" contenteditable="true" onfocus="window.selectInput('notes')" onblur="window.handleNotesChange()" style="width: 100%; height: 100%; box-sizing: border-box; padding: 5px; outline: none; overflow-y: auto;"></div>
+            <div id="project-notes" class="project-notes-editor" contenteditable="true"
+                onfocus="window.selectInput('notes')" onblur="window.handleNotesChange()">
+            </div>
         </div>
-        
+
     </div>
 
     <div id="color-palette-popup">
         <div class="color-swatches-grid" id="color-swatches-grid"></div>
     </div>
 
-    <script src="js/globals.js?ver=2"></script>
-    <script src="js/utils.js?ver=2"></script>
-    <script src="js/events.js?ver=2"></script>
-    <script src="js/render.js?ver=2"></script>
-    <script src="js/modals.js?ver=2"></script>
-    <script src="js/state-actions.js?ver=2"></script>
-    <script src="js/init.js?ver=2"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/globals.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/state-actions.js"></script>
+    <script src="js/init.js"></script>
 </body>
+
 </html>

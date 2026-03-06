@@ -65,7 +65,9 @@ window.savePeriodModal = function () {
     if (!editModalTaskId || !editModalPeriodId) return;
 
     const task = state.tasks.find(t => t.id === editModalTaskId);
+    if (!task) return;
     const period = task.periods.find(p => p.pid === editModalPeriodId);
+    if (!period) return;
 
     const newStart = document.getElementById('modal-period-start').value;
     const newEnd = document.getElementById('modal-period-end').value;
@@ -317,7 +319,19 @@ window.handleFormatChange = function (prop, value) {
 
     if (activeEl && activeEl.isContentEditable) {
         if (prop === 'fontWeight') {
-            document.execCommand('bold', false, null);
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                const range = sel.getRangeAt(0);
+                const span = document.createElement('span');
+                span.style.fontWeight = 'bold';
+                try {
+                    range.surroundContents(span);
+                } catch (err) {
+                    document.execCommand('bold', false, null);
+                }
+            } else {
+                document.execCommand('bold', false, null);
+            }
         } else if (prop === 'color') {
             // execCommand('foreColor') はブロック境界で視覚的な改行を生じることがあるため
             // 選択範囲を <span> でラップして color スタイルを直接適用する
@@ -340,7 +354,19 @@ window.handleFormatChange = function (prop, value) {
                 document.execCommand('backColor', false, value);
             }
         } else if (prop === 'fontFamily') {
-            document.execCommand('fontName', false, value);
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                const range = sel.getRangeAt(0);
+                const span = document.createElement('span');
+                span.style.fontFamily = value;
+                try {
+                    range.surroundContents(span);
+                } catch (err) {
+                    document.execCommand('fontName', false, value);
+                }
+            } else {
+                document.execCommand('fontName', false, value);
+            }
         } else if (prop === 'fontSize') {
             // execCommand('fontSize') のサイズ指定は非標準のため、
             // 選択範囲を <span> でラップして font-size を直接適用する
@@ -369,9 +395,7 @@ window.handleFormatChange = function (prop, value) {
                 activeEl.style.fontSize = value + 'px';
             }
         } else if (prop === 'textAlign') {
-            if (value === 'left') document.execCommand('justifyLeft', false, null);
-            else if (value === 'center') document.execCommand('justifyCenter', false, null);
-            else if (value === 'right') document.execCommand('justifyRight', false, null);
+            activeEl.style.textAlign = (value === 'left' || value === 'center' || value === 'right') ? value : 'left';
         }
 
         if (activeEl.classList.contains('chart-text-box')) {
@@ -527,28 +551,30 @@ window.executePrint = function () {
     window.closePrintModal();
     renderAll();
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         const mainContainer = document.querySelector('.main-container');
         const leftBlock = mainContainer.firstElementChild;
         const notesPane = document.getElementById('notes-pane');
         const projectNotes = document.getElementById('project-notes');
 
         const targetHeight = leftBlock.offsetHeight;
+        const PRINT_NOTES_MARGIN = 33;
         if (notesPane) notesPane.style.setProperty('height', targetHeight + 'px', 'important');
-        if (projectNotes) projectNotes.style.setProperty('height', 'calc(' + targetHeight + 'px - 33px)', 'important');
+        if (projectNotes) projectNotes.style.setProperty('height', `calc(${targetHeight}px - ${PRINT_NOTES_MARGIN}px)`, 'important');
 
         const leftPane = document.getElementById('left-pane');
         const dailyNotesLeft = document.getElementById('daily-notes-left');
+        const COLLAPSED_WIDTH = 350;
+        const EXPANDED_WIDTH = 520;
+
         if (leftPane && dailyNotesLeft) {
-            const targetWidth = leftPane.classList.contains('collapsed-view') ? 350 : 520;
+            const targetWidth = leftPane.classList.contains('collapsed-view') ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
             dailyNotesLeft.style.setProperty('width', targetWidth + 'px', 'important');
             dailyNotesLeft.style.setProperty('min-width', targetWidth + 'px', 'important');
             dailyNotesLeft.style.setProperty('max-width', targetWidth + 'px', 'important');
         }
 
-        window.print();
-
-        setTimeout(() => {
+        const afterPrintHandler = () => {
             if (notesPane) notesPane.style.removeProperty('height');
             if (projectNotes) projectNotes.style.removeProperty('height');
 
@@ -572,15 +598,25 @@ window.executePrint = function () {
             renderAll();
 
             // ★追加: 印刷画面から戻った際に、左右のスクロール位置を同期させる
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 const rightContainer = document.getElementById('right-container');
                 const dailyNotesRight = document.getElementById('daily-notes-right');
                 if (rightContainer && dailyNotesRight) {
                     dailyNotesRight.scrollLeft = rightContainer.scrollLeft;
                 }
-            }, 50);
-        }, 500);
-    }, 500);
+            });
+            window.removeEventListener('afterprint', afterPrintHandler);
+        };
+
+        window.addEventListener('afterprint', afterPrintHandler);
+
+        // 描画の安定を待ってから印刷ダイアログを開く
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.print();
+            });
+        });
+    });
 };
 
 // ---------------------------------------------------
@@ -642,30 +678,31 @@ window.showContextMenu = function (e, title, type, data) {
 
 window.handleContextAction = function (action) {
     if (!selectedItem) return;
+    const currentItem = Object.assign({}, selectedItem);
 
     if (action === 'edit_period') {
-        window.openPeriodModal(selectedItem.taskId, selectedItem.periodId);
+        window.openPeriodModal(currentItem.taskId, currentItem.periodId);
     } else if (action === 'delete_period') {
-        const task = state.tasks.find(t => t.id === selectedItem.taskId);
+        const task = state.tasks.find(t => t.id === currentItem.taskId);
         if (task && task.periods.length > 1) {
-            window.handleRemovePeriod(selectedItem.taskId, selectedItem.periodId);
+            window.handleRemovePeriod(currentItem.taskId, currentItem.periodId);
         } else {
             alert('最後の1つの期間は削除できません。\n行ごと削除するには行の右クリックから「この行を削除」を使用してください。');
         }
     } else if (action === 'delete_arrow') {
-        const task = state.tasks.find(t => t.id === selectedItem.taskId);
-        const period = task ? task.periods.find(p => p.pid === selectedItem.periodId) : null;
+        const task = state.tasks.find(t => t.id === currentItem.taskId);
+        const period = task ? task.periods.find(p => p.pid === currentItem.periodId) : null;
         if (period) {
             let deps = period.dep ? period.dep.toString().split(',').map(s => s.trim()) : [];
-            deps = deps.filter(d => d !== selectedItem.predPid);
-            window.handlePeriodChange(selectedItem.taskId, selectedItem.periodId, 'dep', deps.join(', '));
+            deps = deps.filter(d => d !== currentItem.predPid);
+            window.handlePeriodChange(currentItem.taskId, currentItem.periodId, 'dep', deps.join(', '));
         }
     } else if (action === 'copy_task') {
-        const task = state.tasks.find(t => t.id === selectedItem.taskId);
+        const task = state.tasks.find(t => t.id === currentItem.taskId);
         if (task) copiedTask = JSON.parse(JSON.stringify(task));
     } else if (action === 'paste_task') {
         if (!copiedTask) return;
-        const targetIndex = state.tasks.findIndex(t => t.id === selectedItem.taskId);
+        const targetIndex = state.tasks.findIndex(t => t.id === currentItem.taskId);
         if (targetIndex !== -1) {
             const newTask = JSON.parse(JSON.stringify(copiedTask));
             newTask.id = generateId();
@@ -677,7 +714,7 @@ window.handleContextAction = function (action) {
             renderAll();
         }
     } else if (action === 'delete_task') {
-        const targetId = selectedItem.taskId;
+        const targetId = currentItem.taskId;
         window.openConfirmModal('行の削除', 'この行（タスク）を完全に削除しますか？', function () {
             const targetIndex = state.tasks.findIndex(t => t.id === targetId);
             if (targetIndex !== -1 && targetIndex < state.tasks.length - 1) {
@@ -689,26 +726,26 @@ window.handleContextAction = function (action) {
             renderAll();
         });
     } else if (action === 'toggle_merge_koshu') {
-        const task = state.tasks.find(t => t.id === selectedItem.taskId);
+        const task = state.tasks.find(t => t.id === currentItem.taskId);
         if (task) {
             task.mergeAboveKoshu = !task.mergeAboveKoshu;
             window.saveStateToHistory(); renderAll();
         }
     } else if (action === 'toggle_merge_shubetsu') {
-        const task = state.tasks.find(t => t.id === selectedItem.taskId);
+        const task = state.tasks.find(t => t.id === currentItem.taskId);
         if (task) {
             task.mergeAboveShubetsu = !task.mergeAboveShubetsu;
             window.saveStateToHistory(); renderAll();
         }
     } else if (action === 'edit_text') {
-        const txt = state.texts.find(t => t.id === selectedItem.textId);
+        const txt = state.texts.find(t => t.id === currentItem.textId);
         if (txt) {
             window.openTextInputModal('テキストの文字を編集', txt.text, function (val) {
                 if (val) { txt.text = val; window.saveStateToHistory(); renderAll(); }
             });
         }
     } else if (action === 'delete_text') {
-        const targetTextId = selectedItem.textId;
+        const targetTextId = currentItem.textId;
         window.openConfirmModal('削除', 'このテキストを削除しますか？', function () {
             state.texts = state.texts.filter(t => t.id !== targetTextId);
             window.saveStateToHistory(); renderAll();
@@ -725,69 +762,4 @@ window.handleRowContextMenu = function (e, taskId, taskNo, koshu) {
     window.showContextMenu(e, title, 'task', { taskId });
 };
 
-// --- デバッグ用：書式設定状態の確認 ---
-window.debugFormatState = function () {
-    console.group('[書式デバッグ]');
-    console.log('selectedItem:', JSON.stringify(selectedItem));
-    console.log('savedSelectionNode:', savedSelectionNode ?
-        (savedSelectionNode.id || savedSelectionNode.className || savedSelectionNode.tagName) : 'null');
-    console.log('savedSelectionRange:', savedSelectionRange ? '設定あり' : 'null');
-
-    if (selectedItem && selectedItem.type === 'cell') {
-        const task = state.tasks.find(t => t.id === selectedItem.taskId);
-        const styles = task && task.styles ? task.styles[selectedItem.field] : null;
-        console.log('セルスタイル:', JSON.stringify(styles));
-    } else if (selectedItem && selectedItem.type === 'text') {
-        const txt = state.texts.find(t => t.id === selectedItem.textId);
-        console.log('テキストボックススタイル:', txt ?
-            { color: txt.color, fontWeight: txt.fontWeight, backgroundColor: txt.backgroundColor } : 'null');
-    }
-    console.groupEnd();
-};
-
-window.testFormatFix = function () {
-    console.group('[書式修正テスト]');
-    let passed = 0, failed = 0;
-
-    // テスト1: selectInput後にsavedSelectionRangeが消去されるか
-    savedSelectionRange = { collapsed: false }; // ダミーの選択範囲
-    savedSelectionNode = document.getElementById('project-notes');
-    window.selectInput('cell', 'test_id', 'koshu');
-    if (savedSelectionRange === null && savedSelectionNode === null) {
-        console.log('✓ テスト1 PASS: selectInput後にsavedSelectionRangeが消去された');
-        passed++;
-    } else {
-        console.error('✗ テスト1 FAIL: savedSelectionRangeが消去されていない');
-        failed++;
-    }
-
-    // テスト2: selectedItemがcellの場合、cell stylesに書式が保存されるか
-    const testTaskId = state.tasks[0] && state.tasks[0].id;
-    if (testTaskId) {
-        window.selectInput('cell', testTaskId, 'koshu');
-        const beforeColor = (state.tasks[0].styles && state.tasks[0].styles.koshu &&
-            state.tasks[0].styles.koshu.color) || null;
-        const testColor = '#ff0000';
-        savedSelectionRange = null; savedSelectionNode = null;
-        window.handleFormatChange('color', testColor);
-        const afterColor = state.tasks[0].styles && state.tasks[0].styles.koshu &&
-            state.tasks[0].styles.koshu.color;
-        if (afterColor === testColor) {
-            console.log('✓ テスト2 PASS: セルの文字色が正しく保存された');
-            passed++;
-        } else {
-            console.error('✗ テスト2 FAIL: セルの文字色が保存されていない。値:', afterColor);
-            failed++;
-        }
-        // テスト後のデータを元に戻す
-        if (state.tasks[0].styles && state.tasks[0].styles.koshu) {
-            state.tasks[0].styles.koshu.color = beforeColor;
-        }
-    } else {
-        console.warn('スキップ: タスクが存在しない');
-    }
-
-    console.log(`結果: ${passed}件成功 / ${failed}件失敗`);
-    console.groupEnd();
-    return failed === 0;
-};
+// 削除済み： --- デバッグ用：書式設定状態の確認 ---

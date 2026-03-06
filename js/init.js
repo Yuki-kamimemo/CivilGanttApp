@@ -2,22 +2,10 @@
 // 2. 初期化処理・連動処理
 // ---------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+    // createDefaultState() を使って初期 state を設定（globals.js に一元定義済み）
+    state = window.createDefaultState();
+
     fetchNationalHolidays();
-
-    const today = new Date();
-    const nextMonth = new Date(today);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-    state.projectStart = formatDate(today);
-    state.projectEnd = formatDate(nextMonth);
-    state.displayStart = state.projectStart;
-    state.displayEnd = state.projectEnd;
-
-    state.tasks.push({
-        id: generateId(), no: 1, koshu: "", shubetsu: "", saibetsu: "", collapsed: false,
-        mergeAboveKoshu: false, mergeAboveShubetsu: false,
-        periods: [ { pid: generateId(), dep: "", start: "", end: "", progress: 0, color: "#3b82f6", displayRow: 0 } ]
-    });
 
     document.getElementById('view-range-selector').value = state.viewRange;
     window.handleViewRangeChange(false);
@@ -55,20 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // モーダル内の自動計算
     document.getElementById('modal-period-start').addEventListener('change', (e) => {
         const days = parseInt(document.getElementById('modal-period-days').value);
-        if(!isNaN(days) && days > 0 && e.target.value) {
+        if (!isNaN(days) && days > 0 && e.target.value) {
             document.getElementById('modal-period-end').value = calcEndDate(snapToWorkDay(e.target.value, 1), days);
         }
     });
     document.getElementById('modal-period-days').addEventListener('input', (e) => {
         const start = document.getElementById('modal-period-start').value;
         const days = parseInt(e.target.value);
-        if(start && !isNaN(days) && days > 0) {
+        if (start && !isNaN(days) && days > 0) {
             document.getElementById('modal-period-end').value = calcEndDate(start, days);
         }
     });
     document.getElementById('modal-period-end').addEventListener('change', (e) => {
         const start = document.getElementById('modal-period-start').value;
-        if(start && e.target.value) {
+        if (start && e.target.value) {
             document.getElementById('modal-period-days').value = calcDiffDays(start, e.target.value);
         }
     });
@@ -102,20 +90,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.saveStateToHistory();
-    renderAll();
 
-    window.addEventListener('pywebviewready', async function() {
+    let isInitialized = false;
+    const initializeApp = (initialData = null) => {
+        if (isInitialized) return;
+        isInitialized = true;
+
+        if (initialData) {
+            try {
+                // applyLoadedData internally calls window.saveStateToHistory() and renderAll()
+                applyLoadedData(JSON.parse(initialData));
+            } catch (err) {
+                console.error('初期データの読み込みに失敗しました。', err);
+                renderAll();
+            }
+        } else {
+            renderAll();
+        }
+
+        // 初回描画後に列リサイズ機能を初期化
+        requestAnimationFrame(setupTableResizing);
+    };
+
+    window.addEventListener('pywebviewready', async function () {
         if (window.pywebview && window.pywebview.api) {
             const initialContent = await window.pywebview.api.get_initial_data();
-            if (initialContent) {
-                try {
-                    applyLoadedData(JSON.parse(initialContent));
-                } catch (err) {
-                    console.error('初期データの読み込みに失敗しました。');
-                }
-            }
+            initializeApp(initialContent);
+        } else {
+            initializeApp(null);
         }
     });
 
-    setTimeout(setupTableResizing, 100);
+    // Webブラウザでの単体実行時など pywebview が無い環境用のフォールバック
+    setTimeout(() => {
+        if (!isInitialized) initializeApp(null);
+    }, 500);
 });

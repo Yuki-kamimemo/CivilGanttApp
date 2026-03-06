@@ -1,55 +1,34 @@
 // ---------------------------------------------------
 // 3. データ操作アクション
 // ---------------------------------------------------
-window.handleNewFile = function() {
-    window.openConfirmModal('新規作成', '現在のデータは破棄されます。保存していない変更は失われますが、よろしいですか？', async function() {
+window.handleNewFile = function () {
+    window.openConfirmModal('新規作成', '現在のデータは破棄されます。保存していない変更は失われますが、よろしいですか？', async function () {
         if (window.pywebview && window.pywebview.api) {
             await window.pywebview.api.clear_file_path();
         }
-
-        const today = new Date();
-        const nextMonth = new Date(today);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-        state = {
-            projectName: '', companyName: '', viewRange: 'month', viewScale: 'day',
-            projectStart: formatDate(today), projectEnd: formatDate(nextMonth),
-            displayStart: formatDate(today), displayEnd: formatDate(nextMonth),
-            notes: '', notesCollapsed: false,
-            dailyNoteTabs: [ { id: 'tab_general', name: '作業全般・天候' }, { id: 'tab_safety', name: '安全管理・行事' } ],
-            activeDailyNoteTab: 'tab_general',
-            dailyNotesData: { 'tab_general': {}, 'tab_safety': {} },
-            holidays: { sundays: true, saturdays: false, nationalHolidays: true, custom: [] },
-            autoCreateBar: true,
-            tasks: [
-                {
-                    id: generateId(), no: 1, koshu: "", shubetsu: "", saibetsu: "", collapsed: false,
-                    mergeAboveKoshu: false, mergeAboveShubetsu: false,
-                    periods: [ { pid: generateId(), dep: "", start: "", end: "", progress: 0, color: "#3b82f6", displayRow: 0 } ]
-                }
-            ],
-            texts: [], shapes: [],
-            globalFontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-            globalFontSize: 13
-        };
-
+        // createDefaultState() を使って初期化（state の定義を一元管理）
+        state = window.createDefaultState();
         stateHistory = []; historyIndex = -1;
         window.saveStateToHistory(); renderAll();
     });
 };
 
-window.handleOverwriteSave = async function() {
+window.handleOverwriteSave = async function () {
     const dataStr = JSON.stringify(state, null, 2);
     if (window.pywebview && window.pywebview.api) {
         const success = await window.pywebview.api.overwrite_file(dataStr);
-        if (success) alert('上書き保存しました！');
-        else window.handleSaveFile();
+        if (success) {
+            // alert() は処理をブロックするためトースト通知に変更
+            showToastNotification('上書き保存しました！');
+        } else {
+            window.handleSaveFile();
+        }
     } else {
         window.handleSaveFile();
     }
 };
 
-window.handleSaveFile = async function() {
+window.handleSaveFile = async function () {
     const dataStr = JSON.stringify(state, null, 2);
     const fileName = state.projectName ? `${state.projectName}_工程表.csm` : '工程表.csm';
 
@@ -65,11 +44,11 @@ window.handleSaveFile = async function() {
     }
 };
 
-window.handleOpenFile = async function() {
+window.handleOpenFile = async function () {
     window.openConfirmModal(
         'ファイルを開く',
         '現在のデータは破棄されます。保存していない変更は失われますが、よろしいですか？',
-        async function() {
+        async function () {
             if (window.pywebview && window.pywebview.api) {
                 const fileContent = await window.pywebview.api.open_file();
                 if (fileContent) {
@@ -95,7 +74,7 @@ window.handleOpenFile = async function() {
     );
 };
 
-window.handleExportExcel = async function() {
+window.handleExportExcel = async function () {
     const exportData = { state: state, nationalHolidays: window.nationalHolidays || {} };
     const dataStr = JSON.stringify(exportData);
     const fileName = state.projectName ? `${state.projectName}_工程表.xlsx` : '工程表.xlsx';
@@ -110,16 +89,18 @@ window.handleExportExcel = async function() {
 
 function applyLoadedData(parsedData) {
     if (parsedData && Array.isArray(parsedData.tasks)) {
-        if (!parsedData.holidays) parsedData.holidays = { sundays: true, saturdays: false, nationalHolidays: true, custom: [] };
-        if (!parsedData.viewRange) parsedData.viewRange = 'custom';
-        if (!parsedData.viewScale) parsedData.viewScale = 'day';
-        if (!parsedData.dailyNoteTabs) {
-            parsedData.dailyNoteTabs = [{ id: 'tab_general', name: '作業全般・天候' }];
-            parsedData.activeDailyNoteTab = 'tab_general';
-            parsedData.dailyNotesData = { 'tab_general': {} };
-        }
-        if (parsedData.autoCreateBar === undefined) parsedData.autoCreateBar = true;
 
+        // バリデーション: tasks 内の各タスクに id / periods があるか確認
+        for (const t of parsedData.tasks) {
+            if (!t.id) t.id = generateId();
+            if (!Array.isArray(t.periods) || t.periods.length === 0) {
+                t.periods = [{ pid: generateId(), dep: '', start: '', end: '', progress: 0, color: '#3b82f6', displayRow: 0 }];
+            }
+            // periods 内の各期間に pid があるか確認
+            t.periods.forEach(p => { if (!p.pid) p.pid = generateId(); });
+        }
+
+        // 旧バージョン教え: globalStart/globalEnd 属性を新属性名に移行
         if (parsedData.globalStart) { parsedData.projectStart = parsedData.globalStart; parsedData.displayStart = parsedData.globalStart; delete parsedData.globalStart; }
         if (parsedData.globalEnd) { parsedData.projectEnd = parsedData.globalEnd; parsedData.displayEnd = parsedData.globalEnd; delete parsedData.globalEnd; }
 
@@ -128,26 +109,39 @@ function applyLoadedData(parsedData) {
             if (t.shubetsu === undefined) t.shubetsu = ""; if (t.saibetsu === undefined) t.saibetsu = "";
             if (t.mergeAboveKoshu === undefined) t.mergeAboveKoshu = false;
             if (t.mergeAboveShubetsu === undefined) t.mergeAboveShubetsu = false;
-            if(t.periods) t.periods.forEach(p => {
+            if (t.periods) t.periods.forEach(p => {
                 if (p.progress === undefined) p.progress = 0;
                 if (p.color === undefined) p.color = '#3b82f6';
                 if (p.displayRow === undefined) p.displayRow = 0;
             });
         });
-        state = parsedData;
+
+        // デフォルト値をベースにマージすることで、古いCSMファイルで新プロパティが undefined になる問題を防ぐ
+        const defaultState = {
+            viewRange: 'custom', viewScale: 'day', notes: '', notesCollapsed: false,
+            dailyNoteTabs: [{ id: 'tab_general', name: '作業全般・天候' }],
+            activeDailyNoteTab: 'tab_general',
+            dailyNotesData: { 'tab_general': {} },
+            holidays: { sundays: true, saturdays: false, nationalHolidays: true, custom: [] },
+            autoCreateBar: true, texts: [], shapes: [],
+            globalFontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            globalFontSize: 13
+        };
+        state = { ...defaultState, ...parsedData };
+
         window.saveStateToHistory(); renderAll();
     } else {
         alert('無効なファイルです。');
     }
 }
 
-window.handleProjectInfoChange = function() {
+window.handleProjectInfoChange = function () {
     state.projectName = document.getElementById('project-name').value;
     state.companyName = document.getElementById('company-name').value;
     window.saveStateToHistory();
 };
 
-window.handleProjectDateChange = function() {
+window.handleProjectDateChange = function () {
     state.projectStart = document.getElementById('project-start').value;
     state.projectEnd = document.getElementById('project-end').value;
     if (state.viewRange === 'custom') {
@@ -157,7 +151,7 @@ window.handleProjectDateChange = function() {
     window.saveStateToHistory(); renderAll();
 };
 
-window.handleViewScaleChange = function() {
+window.handleViewScaleChange = function () {
     state.viewScale = document.getElementById('view-scale-selector').value;
     if (state.viewScale === 'month' && state.displayStart && state.displayEnd) {
         const s = new Date(state.displayStart); s.setDate(1); state.displayStart = formatDate(s);
@@ -166,7 +160,7 @@ window.handleViewScaleChange = function() {
     window.saveStateToHistory(); renderAll();
 };
 
-window.handleViewRangeChange = function(shouldRender = true) {
+window.handleViewRangeChange = function (shouldRender = true) {
     state.viewRange = document.getElementById('view-range-selector').value;
     if (!state.projectStart) state.projectStart = formatDate(new Date());
     if (!state.displayStart) state.displayStart = state.projectStart;
@@ -183,7 +177,7 @@ window.handleViewRangeChange = function(shouldRender = true) {
     if (shouldRender) { window.saveStateToHistory(); renderAll(); }
 };
 
-window.handleDisplayStartChange = function() {
+window.handleDisplayStartChange = function () {
     const newStart = document.getElementById('display-start-date').value;
     if (newStart) {
         state.displayStart = newStart;
@@ -204,7 +198,7 @@ function calcDisplayEndFromStr(startStr, range) {
     return formatDate(d);
 }
 
-window.shiftDisplay = function(direction) {
+window.shiftDisplay = function (direction) {
     if (state.viewRange === 'custom') return;
     let d = new Date(state.displayStart);
     if (state.viewRange === 'week') d.setDate(d.getDate() + (7 * direction));
@@ -217,12 +211,12 @@ window.shiftDisplay = function(direction) {
     window.saveStateToHistory(); renderAll();
 };
 
-window.handleAddTask = function() {
+window.handleAddTask = function () {
     const newNo = state.tasks.length + 1;
     state.tasks.push({
         id: generateId(), no: newNo, koshu: "", shubetsu: "", saibetsu: "", collapsed: false,
         mergeAboveKoshu: false, mergeAboveShubetsu: false,
-        periods: [ { pid: generateId(), dep: "", start: "", end: "", progress: 0, color: "#3b82f6", displayRow: 0 } ]
+        periods: [{ pid: generateId(), dep: "", start: "", end: "", progress: 0, color: "#3b82f6", displayRow: 0 }]
     });
     window.saveStateToHistory();
     renderAll();
@@ -240,7 +234,7 @@ window.handleAddTask = function() {
     }, 50);
 };
 
-window.handleAddPeriod = function(taskId, actionType = 'normal') {
+window.handleAddPeriod = function (taskId, actionType = 'normal') {
     const task = state.tasks.find(t => t.id === taskId);
     if (task) {
         const maxRow = task.periods.reduce((max, p) => Math.max(max, p.displayRow || 0), 0);
@@ -255,7 +249,7 @@ window.handleAddPeriod = function(taskId, actionType = 'normal') {
     }
 };
 
-window.handleRemovePeriod = function(taskId, periodId) {
+window.handleRemovePeriod = function (taskId, periodId) {
     const task = state.tasks.find(t => t.id === taskId);
     if (task && task.periods.length > 1) {
         task.periods = task.periods.filter(p => p.pid !== periodId);
@@ -264,7 +258,7 @@ window.handleRemovePeriod = function(taskId, periodId) {
     }
 };
 
-window.handleToggleCollapse = function(taskId) {
+window.handleToggleCollapse = function (taskId) {
     const task = state.tasks.find(t => t.id === taskId);
     if (task) {
         task.collapsed = !task.collapsed;
@@ -272,7 +266,7 @@ window.handleToggleCollapse = function(taskId) {
     }
 };
 
-window.handleTaskDetailChange = function(taskId, field, value) {
+window.handleTaskDetailChange = function (taskId, field, value) {
     const targetIndex = state.tasks.findIndex(t => t.id === taskId);
     if (targetIndex === -1) return;
 
@@ -288,7 +282,7 @@ window.handleTaskDetailChange = function(taskId, field, value) {
     window.saveStateToHistory(); renderAll();
 };
 
-window.handlePeriodChange = function(taskId, periodId, field, value) {
+window.handlePeriodChange = function (taskId, periodId, field, value) {
     const task = state.tasks.find(t => t.id === taskId); if (!task) return;
     const period = task.periods.find(p => p.pid === periodId); if (!period) return;
 
@@ -325,8 +319,8 @@ window.handlePeriodChange = function(taskId, periodId, field, value) {
     window.saveStateToHistory(); renderAll();
 };
 
-window.addDailyTab = function() {
-    window.openTextInputModal('新しい備考タブの名前', '新規タブ', function(name) {
+window.addDailyTab = function () {
+    window.openTextInputModal('新しい備考タブの名前', '新規タブ', function (name) {
         if (name) {
             const id = 'tab_' + generateId();
             state.dailyNoteTabs.push({ id, name });
@@ -336,16 +330,16 @@ window.addDailyTab = function() {
         }
     });
 };
-window.editCurrentDailyTab = function() {
+window.editCurrentDailyTab = function () {
     const currentTab = state.dailyNoteTabs.find(t => t.id === state.activeDailyNoteTab);
     if (!currentTab) return;
-    window.openTextInputModal('タブの名前を変更', currentTab.name, function(newName) {
+    window.openTextInputModal('タブの名前を変更', currentTab.name, function (newName) {
         if (newName) { currentTab.name = newName; window.saveStateToHistory(); renderAll(); }
     });
 };
-window.deleteCurrentDailyTab = function() {
+window.deleteCurrentDailyTab = function () {
     if (state.dailyNoteTabs.length <= 1) { alert('最後の1つのタブは削除できません。'); return; }
-    window.openConfirmModal('削除の確認', '現在の備考タブと入力データを完全に削除しますか？', function() {
+    window.openConfirmModal('削除の確認', '現在の備考タブと入力データを完全に削除しますか？', function () {
         const id = state.activeDailyNoteTab;
         state.dailyNoteTabs = state.dailyNoteTabs.filter(t => t.id !== id);
         delete state.dailyNotesData[id];
@@ -353,7 +347,7 @@ window.deleteCurrentDailyTab = function() {
         window.saveStateToHistory(); renderAll();
     });
 };
-window.handleDailyNoteChange = function(dateStr, value) {
+window.handleDailyNoteChange = function (dateStr, value) {
     const tabId = state.activeDailyNoteTab;
     if (!state.dailyNotesData[tabId]) state.dailyNotesData[tabId] = {};
     // 内容が変わっていない場合は履歴を保存しない（Undoの無駄遣いを防ぐ）
@@ -363,23 +357,25 @@ window.handleDailyNoteChange = function(dateStr, value) {
     window.saveStateToHistory();
 };
 
-window.handleNotesChange = function() {
+window.handleNotesChange = function () {
     state.notes = document.getElementById('project-notes').innerHTML;
     window.saveStateToHistory();
 };
 
-window.toggleNotes = function() {
+window.toggleNotes = function () {
     state.notesCollapsed = !state.notesCollapsed;
     window.saveStateToHistory(); renderAll();
 };
 
-window.handleZoomChange = function() {
+window.handleZoomChange = function () {
     const slider = document.getElementById('zoom-slider');
     state.zoomRatio = parseFloat(slider.value);
+    // ズーム変更は連続操作が多いため、意図的に Undo 履歴に残さない
+    // （Undo 対応が必要な場合は saveStateToHistory() を追加する）
     renderAll();
 };
 
-window.handleAutoCreateBarChange = function() {
+window.handleAutoCreateBarChange = function () {
     const cb = document.getElementById('auto-create-bar-cb');
     state.autoCreateBar = cb.checked;
     window.saveStateToHistory();
