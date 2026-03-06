@@ -1,33 +1,22 @@
 // ---------------------------------------------------
-// PDF / PNG エクスポートロジック
-// html2canvas + jsPDF を使用
+// PDF / PNG エクスポートロジック (ヘッドレスブラウザ版)
+// Python (Playwright) にHTMLを送信してPDFを生成する
 // ---------------------------------------------------
-
-const PAPER_SIZES = {
-    'a4-landscape': { widthMm: 297, heightMm: 210 },
-    'a3-landscape': { widthMm: 420, heightMm: 297 }
-};
-const PDF_MARGIN_MM = 10;
-const CAPTURE_SCALE = 2;
-
-// プレビュー用ページ管理
-let pdfPageCanvases = [];
-let pdfCurrentPage = 0;
 
 // ---------------------------------------------------
 // 設定値収集
 // ---------------------------------------------------
 function collectPdfSettings() {
     return {
-        printStart:  document.getElementById('modal-print-start').value,
-        printEnd:    document.getElementById('modal-print-end').value,
-        zoom:        parseFloat(document.getElementById('modal-print-zoom').value) || 1.0,
-        paperSize:   document.getElementById('modal-print-paper').value || 'a4-landscape',
-        showNotes:   document.getElementById('modal-print-show-notes').checked,
-        showDaily:   document.getElementById('modal-print-show-daily').checked,
-        showStamp:   document.getElementById('modal-print-show-stamp').checked,
-        stamp1:      document.getElementById('modal-print-stamp1').value || '現場代理人',
-        stamp2:      document.getElementById('modal-print-stamp2').value || '監理技術者'
+        printStart: document.getElementById('modal-print-start').value,
+        printEnd: document.getElementById('modal-print-end').value,
+        zoom: parseFloat(document.getElementById('modal-print-zoom').value) || 1.0,
+        paperSize: document.getElementById('modal-print-paper').value || 'a4-landscape',
+        showNotes: document.getElementById('modal-print-show-notes').checked,
+        showDaily: document.getElementById('modal-print-show-daily').checked,
+        showStamp: document.getElementById('modal-print-show-stamp').checked,
+        stamp1: document.getElementById('modal-print-stamp1').value || '現場代理人',
+        stamp2: document.getElementById('modal-print-stamp2').value || '監理技術者'
     };
 }
 
@@ -43,20 +32,6 @@ function showPdfLoading(text) {
 
 function hidePdfLoading() {
     document.getElementById('pdf-loading-overlay').classList.remove('visible');
-}
-
-// ---------------------------------------------------
-// フレーム待機ユーティリティ
-// ---------------------------------------------------
-function waitFrames(n) {
-    return new Promise(resolve => {
-        let count = 0;
-        function tick() {
-            if (++count >= n) resolve();
-            else requestAnimationFrame(tick);
-        }
-        requestAnimationFrame(tick);
-    });
 }
 
 // ---------------------------------------------------
@@ -79,272 +54,189 @@ function restoreStampTitles(originals) {
 }
 
 // ---------------------------------------------------
-// メインキャプチャ処理
+// 印刷用HTML構築
 // ---------------------------------------------------
-async function captureGanttToCanvas(settings) {
-    // 現在の状態を退避
+async function buildPrintableHtml(settings) {
+    // 1. 現在の表示状態を退避
     const prePdfState = {
         displayStart: state.displayStart,
-        displayEnd:   state.displayEnd,
-        zoomRatio:    state.zoomRatio,
-        viewRange:    state.viewRange
+        displayEnd: state.displayEnd,
+        zoomRatio: state.zoomRatio,
+        viewRange: state.viewRange
     };
 
-    // 設定を state に反映してレンダリング
+    // 2. 印刷設定を適用してレンダリング
     state.displayStart = settings.printStart;
-    state.displayEnd   = settings.printEnd;
-    state.zoomRatio    = settings.zoom;
-    state.viewRange    = 'custom';
+    state.displayEnd = settings.printEnd;
+    state.zoomRatio = settings.zoom;
+    state.viewRange = 'custom'; // 印刷時は「全体表示」や指定範囲で固定
     renderAll();
 
-    // 描画安定待機
-    await waitFrames(2);
+    // スクロール位置を先頭に戻してからHTMLを取得
+    const rc = document.getElementById('right-container');
+    const dnr = document.getElementById('daily-notes-right');
+    if (rc) rc.scrollLeft = 0;
+    if (dnr) dnr.scrollLeft = 0;
 
-    // notes-pane / daily-notes の表示制御
-    const notesPane = document.getElementById('notes-pane');
-    if (notesPane) {
-        notesPane.style.display = settings.showNotes ? '' : 'none';
-    }
-    const dailyNotesWrapper = document.querySelector('.daily-notes-wrapper');
-    if (dailyNotesWrapper) {
-        dailyNotesWrapper.style.display = settings.showDaily ? '' : 'none';
-    }
+    // UI安定化のため少し待機
+    await new Promise(r => setTimeout(r, 100));
 
-    // 日次備考欄の寸法を退避（print-capture-mode 適用前）
-    const dnRightEl = document.getElementById('daily-notes-right');
-    const dnGridEl  = document.getElementById('daily-notes-grid');
-    const dnRightH  = dnRightEl ? dnRightEl.offsetHeight : 0;
-    const dnRightW  = (() => {
-        const rc = document.getElementById('right-container');
-        return rc ? rc.scrollWidth : (dnRightEl ? dnRightEl.scrollWidth : 0);
-    })();
+    // ★ 印刷高さ圧縮の計算（DOM測定はUI安定後に実施）
+    const MM_TO_PX = 96 / 25.4;
+    const isA3 = settings.paperSize === 'a3-landscape';
+    const paperHeightMm = isA3 ? 297 : 210;
+    const printableHeightPx = (paperHeightMm - 20) * MM_TO_PX; // 20mm = 上下余白合計
+    const PROJ_HEADER_PX = 70;   // プロジェクト情報行
+    const STAMP_PX = settings.showStamp ? 90 : 0;  // ハンコ枠
+    // 日別備考の高さは作業画面の実際の高さを使用（固定値ではなくDOMから取得）
+    const dailyNotesEl = document.querySelector('.daily-notes-wrapper');
+    const DAILY_NOTES_PRINT_PX = settings.showDaily && dailyNotesEl
+        ? dailyNotesEl.offsetHeight
+        : 0;
+    const BUFFER_PX = 20;        // 余白バッファ
+    const availForGantt = printableHeightPx - PROJ_HEADER_PX - STAMP_PX -
+        (settings.showDaily ? DAILY_NOTES_PRINT_PX : 0) - BUFFER_PX;
 
-    // キャプチャモード付与
-    document.body.classList.add('print-capture-mode');
+    // カレンダーヘッダー + 全チャート行の実際の高さを測定
+    const calHeaderEl = document.getElementById('calendar-header');
+    const calHeaderH = calHeaderEl ? calHeaderEl.offsetHeight : 32;
+    const chartAreaEl = document.getElementById('chart-area');
+    const actualGanttHeight = calHeaderH + (chartAreaEl ? chartAreaEl.scrollHeight : 400);
 
-    // 日次備考欄の高さ・幅を明示的にセット（height:auto による高さ崩壊を防ぐ）
-    if (settings.showDaily && dnRightEl && dnRightH > 0) {
-        dnRightEl.style.setProperty('height', dnRightH + 'px', 'important');
-        dnRightEl.style.setProperty('width',  dnRightW + 'px', 'important');
-        if (dnGridEl) {
-            dnGridEl.style.setProperty('height', dnRightH + 'px', 'important');
-        }
-    }
-
-    // DOM寸法固定（executePrint と同パターン）
-    const mainContainer = document.querySelector('.main-container');
-    const leftBlock = mainContainer ? mainContainer.firstElementChild : null;
-    const projectNotes = document.getElementById('project-notes');
-    const leftPane = document.getElementById('left-pane');
-    const dailyNotesLeft = document.getElementById('daily-notes-left');
-    const PRINT_NOTES_MARGIN = 33;
-    const COLLAPSED_WIDTH = 350;
-    const EXPANDED_WIDTH  = 520;
-
-    if (leftBlock && notesPane) {
-        const targetHeight = leftBlock.offsetHeight;
-        notesPane.style.setProperty('height', targetHeight + 'px', 'important');
-        if (projectNotes) {
-            projectNotes.style.setProperty('height', `calc(${targetHeight}px - ${PRINT_NOTES_MARGIN}px)`, 'important');
-        }
+    let ganttZoom = 1.0;
+    if (actualGanttHeight > availForGantt && availForGantt > 0) {
+        ganttZoom = Math.max(0.3, availForGantt / actualGanttHeight);
     }
 
-    if (leftPane && dailyNotesLeft) {
-        const targetWidth = leftPane.classList.contains('collapsed-view') ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
-        dailyNotesLeft.style.setProperty('width',     targetWidth + 'px', 'important');
-        dailyNotesLeft.style.setProperty('min-width', targetWidth + 'px', 'important');
-        dailyNotesLeft.style.setProperty('max-width', targetWidth + 'px', 'important');
-    }
-
-    // ハンコ枠の制御
+    // 3. ハンコ枠の一時的な更新
     const stampContainer = document.querySelector('.stamp-container');
     const origStampTitles = getStampTitles();
-    if (stampContainer) {
-        stampContainer.style.display = settings.showStamp ? '' : 'none';
-    }
     if (settings.showStamp) {
         setStampTitles(settings.stamp1, settings.stamp2);
     }
 
-    // フォントロード完了を保証
-    await document.fonts.ready;
+    // 4. クローンを作成して印刷用HTMLを組み立てる
+    const mainContainerHtml = document.querySelector('.main-container').outerHTML;
+    const stampHtml = settings.showStamp && stampContainer ? stampContainer.outerHTML : '';
 
-    // 左ペイン幅を記録
-    const leftPaneEl = document.getElementById('left-pane');
-    const leftPaneWidthPx = leftPaneEl ? leftPaneEl.offsetWidth * CAPTURE_SCALE : 0;
+    const projectInfoHtml = `
+        <div class="print-project-header" style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 10px; font-weight: bold;">
+            <div>工事名: ${state.projectName || ''}</div>
+            <div>事業者名: ${state.companyName || ''}</div>
+            <div>全体工期: ${state.projectStart || ''} ～ ${state.projectEnd || ''}</div>
+        </div>
+    `;
 
-    // キャプチャ実行
-    let totalCanvas;
+    // 抽出するCSS (現在のstyle.cssを読み込むか、必要最低限のCSSをインライン化する)
+    // ここでは、Playwrightがレンダリングする際に同じCSSを参照できるように
+    // 抽出または絶対パスリンクを生成します。
+    // 今回は簡易的にローカルのスタイルシートの内容を取得して注入します (もしfetchが使えれば)
+    let styleText = '';
     try {
-        totalCanvas = await html2canvas(document.body, {
-            scale:           CAPTURE_SCALE,
-            backgroundColor: '#ffffff',
-            allowTaint:      true,
-            useCORS:         true,
-            logging:         false,
-            ignoreElements:  (el) => {
-                return el.classList.contains('modal-overlay') ||
-                       el.id === 'color-palette-popup' ||
-                       el.classList.contains('context-menu') ||
-                       el.classList.contains('print-hide');
-            }
-        });
-    } finally {
-        // --- 後始末（必ず実行） ---
-        document.body.classList.remove('print-capture-mode');
-
-        // DOM寸法固定解除
-        if (notesPane) notesPane.style.removeProperty('height');
-        if (projectNotes) projectNotes.style.removeProperty('height');
-        if (dailyNotesLeft) {
-            dailyNotesLeft.style.removeProperty('width');
-            dailyNotesLeft.style.removeProperty('min-width');
-            dailyNotesLeft.style.removeProperty('max-width');
-            if (leftPane) {
-                const currentWidth = leftPane.offsetWidth;
-                dailyNotesLeft.style.width    = currentWidth + 'px';
-                dailyNotesLeft.style.minWidth = currentWidth + 'px';
-            }
+        const styleSheetResponse = await fetch('style.css');
+        if (styleSheetResponse.ok) {
+            styleText = await styleSheetResponse.text();
         }
-
-        // 日次備考欄の明示的寸法を解除
-        if (dnRightEl) {
-            dnRightEl.style.removeProperty('height');
-            dnRightEl.style.removeProperty('width');
-        }
-        if (dnGridEl) dnGridEl.style.removeProperty('height');
-
-        // notes-pane / daily-notes を元に戻す
-        if (notesPane) notesPane.style.display = '';
-        if (dailyNotesWrapper) dailyNotesWrapper.style.display = '';
-
-        // ハンコ枠を元に戻す
-        if (stampContainer) stampContainer.style.display = '';
-        restoreStampTitles(origStampTitles);
-
-        // state 復元
-        state.displayStart = prePdfState.displayStart;
-        state.displayEnd   = prePdfState.displayEnd;
-        state.zoomRatio    = prePdfState.zoomRatio;
-        state.viewRange    = prePdfState.viewRange;
-        renderAll();
-
-        // スクロール位置同期
-        await waitFrames(1);
-        const rightContainer   = document.getElementById('right-container');
-        const dailyNotesRight  = document.getElementById('daily-notes-right');
-        if (rightContainer && dailyNotesRight) {
-            dailyNotesRight.scrollLeft = rightContainer.scrollLeft;
-        }
+    } catch (e) {
+        console.warn('style.cssのフェッチに失敗しました (iframe環境でのみ動作が変わる可能性があります): ', e);
     }
 
-    return { totalCanvas, leftPaneWidthPx };
-}
-
-// ---------------------------------------------------
-// ページスライス・合成
-// ---------------------------------------------------
-function sliceAndCompositePages(totalCanvas, leftPaneWidthPx, settings) {
-    const paper = PAPER_SIZES[settings.paperSize] || PAPER_SIZES['a4-landscape'];
-    const dpi   = 96;
-
-    const pageWidthPx  = Math.round((paper.widthMm  - PDF_MARGIN_MM * 2) / 25.4 * dpi * CAPTURE_SCALE);
-    const pageHeightPx = Math.round((paper.heightMm - PDF_MARGIN_MM * 2) / 25.4 * dpi * CAPTURE_SCALE);
-
-    const rightPaneFullWidth = totalCanvas.width - leftPaneWidthPx;
-    const rightPanePerPage   = pageWidthPx - leftPaneWidthPx;
-
-    const pages = [];
-    let rightOffset = 0;
-    let isFirst = true;
-
-    while (rightOffset < rightPaneFullWidth || isFirst) {
-        const canvas = document.createElement('canvas');
-        canvas.width  = pageWidthPx;
-        canvas.height = pageHeightPx;
-        const ctx = canvas.getContext('2d');
-
-        // 白背景
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageWidthPx, pageHeightPx);
-
-        if (isFirst) {
-            // 1ページ目: そのまま左上からコピー
-            ctx.drawImage(
-                totalCanvas,
-                0, 0, pageWidthPx, pageHeightPx,
-                0, 0, pageWidthPx, pageHeightPx
-            );
-        } else {
-            // 2ページ目以降: 左ペイン + 右ペイン（右オフセット分ずらす）
-            // 左ペイン
-            ctx.drawImage(
-                totalCanvas,
-                0, 0, leftPaneWidthPx, pageHeightPx,
-                0, 0, leftPaneWidthPx, pageHeightPx
-            );
-            // 右ペイン（右方向にオフセット）
-            const srcRightWidth = Math.min(rightPanePerPage, rightPaneFullWidth - rightOffset);
-            ctx.drawImage(
-                totalCanvas,
-                leftPaneWidthPx + rightOffset, 0, srcRightWidth, pageHeightPx,
-                leftPaneWidthPx, 0, srcRightWidth, pageHeightPx
-            );
+    // 印刷時専用の微調整CSSを追加
+    // html2canvas用だった print-capture-mode とは異なり、本物の印刷用CSS
+    const printSpecificCss = `
+        @page {
+            size: ${settings.paperSize === 'a3-landscape' ? 'A3' : 'A4'} landscape;
+            margin: 10mm;
         }
-
-        pages.push(canvas);
-
-        if (isFirst) {
-            // 1ページ目で右ペインが収まる範囲をオフセットに反映
-            rightOffset = rightPanePerPage - leftPaneWidthPx;
-            // 補正: 1ページ目は leftPaneWidthPx の分だけ右ペインが少ない
-            rightOffset = pageWidthPx - leftPaneWidthPx;
-        } else {
-            rightOffset += rightPanePerPage;
+        body {
+            background-color: white !important;
+            margin: 0;
+            padding: 0;
+            overflow: visible !important;
         }
+        .main-container {
+            height: auto !important;
+            overflow: visible !important;
+            /* flex-direction は変更しない（左右ペインの横並びを維持） */
+        }
+        .gantt-wrapper {
+            height: auto !important;
+            overflow: visible !important;
+            width: max-content !important;
+            zoom: ${ganttZoom.toFixed(4)} !important;
+        }
+        .left-pane {
+            overflow: visible !important;
+            height: auto !important;
+        }
+        .right-pane {
+            overflow: visible !important;
+            height: auto !important;
+            width: max-content !important;
+        }
+        #right-container {
+            overflow: visible !important;
+            height: auto !important;
+            width: max-content !important;
+        }
+        #calendar-header {
+            overflow: visible !important;
+            width: max-content !important;
+        }
+        #chart-area {
+            overflow: visible !important;
+            height: auto !important;
+        }
+        .daily-notes-wrapper {
+            display: ${settings.showDaily ? 'flex' : 'none'} !important;
+            height: ${settings.showDaily ? DAILY_NOTES_PRINT_PX + 'px' : '0'} !important;
+            max-height: ${settings.showDaily ? DAILY_NOTES_PRINT_PX + 'px' : '0'} !important;
+            min-height: 0 !important;
+            flex: none !important;
+            overflow: hidden !important;
+        }
+        #daily-notes-right {
+            overflow: hidden !important;
+            height: 100% !important;
+            width: max-content !important;
+        }
+        /* 備考エリアの表示切り替え */
+        .notes-pane { display: ${settings.showNotes ? 'flex' : 'none'} !important; height: auto !important; }
 
-        isFirst = false;
+        .print-hide { display: none !important; }
+    `;
 
-        if (rightOffset >= rightPaneFullWidth) break;
-    }
+    const htmlString = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Print Preview</title>
+    <style>
+        ${styleText}
+        ${printSpecificCss}
+    </style>
+</head>
+<body class="print-capture-mode">
+    <div style="padding: 10px;">
+        ${projectInfoHtml}
+        <div style="display:flex; justify-content:flex-end; margin-bottom: 5px;">
+            ${stampHtml}
+        </div>
+        ${mainContainerHtml}
+    </div>
+</body>
+</html>`;
 
-    return pages;
-}
+    // 5. 退避した状態を復元
+    restoreStampTitles(origStampTitles);
+    state.displayStart = prePdfState.displayStart;
+    state.displayEnd = prePdfState.displayEnd;
+    state.zoomRatio = prePdfState.zoomRatio;
+    state.viewRange = prePdfState.viewRange;
+    renderAll();
 
-// ---------------------------------------------------
-// PDF構築
-// ---------------------------------------------------
-function buildPdfFromPages(pageCanvases, paperSize) {
-    const paper = PAPER_SIZES[paperSize] || PAPER_SIZES['a4-landscape'];
-    const formatName = paperSize.startsWith('a3') ? 'a3' : 'a4';
-    const { jsPDF } = window.jspdf;
-
-    const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit:        'mm',
-        format:      formatName
-    });
-
-    const printableWidthMm  = paper.widthMm  - PDF_MARGIN_MM * 2;
-    const printableHeightMm = paper.heightMm - PDF_MARGIN_MM * 2;
-
-    pageCanvases.forEach((canvas, i) => {
-        if (i > 0) pdf.addPage();
-        const imgData = canvas.toDataURL('image/jpeg', 0.92);
-        pdf.addImage(imgData, 'JPEG', PDF_MARGIN_MM, PDF_MARGIN_MM, printableWidthMm, printableHeightMm);
-    });
-
-    return pdf;
-}
-
-// ---------------------------------------------------
-// ファイル名生成
-// ---------------------------------------------------
-function generateDefaultFilename(ext) {
-    const name = (state.projectName || '工程表').replace(/[\\/:*?"<>|]/g, '_');
-    const now  = new Date();
-    const ymd  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-    return `${name}_${ymd}.${ext}`;
+    return htmlString;
 }
 
 // ---------------------------------------------------
@@ -354,10 +246,24 @@ window.updatePdfPreview = async function () {
     showPdfLoading('プレビュー生成中...');
     try {
         const settings = collectPdfSettings();
-        const { totalCanvas, leftPaneWidthPx } = await captureGanttToCanvas(settings);
-        pdfPageCanvases = sliceAndCompositePages(totalCanvas, leftPaneWidthPx, settings);
-        pdfCurrentPage  = 0;
-        renderPreviewPage();
+        const htmlString = await buildPrintableHtml(settings);
+
+        let iframe = document.getElementById('pdf-preview-iframe');
+        if (!iframe) {
+            console.warn('プレビュー用の iframe が見つかりません。動的に生成します。');
+            const previewArea = document.getElementById('pdf-preview-area');
+            if (previewArea) {
+                previewArea.innerHTML = '<iframe id="pdf-preview-iframe" style="flex:1; width:100%; border:1px solid #ccc; background: white;" title="PDF Preview"></iframe>';
+                iframe = document.getElementById('pdf-preview-iframe');
+            }
+        }
+
+        if (iframe) {
+            iframe.srcdoc = htmlString;
+        } else {
+            console.error('プレビューエリア自体が見つかりません。');
+        }
+
     } catch (e) {
         console.error('プレビュー生成エラー:', e);
         alert('プレビューの生成に失敗しました:\n' + e.message);
@@ -366,58 +272,39 @@ window.updatePdfPreview = async function () {
     }
 };
 
-function renderPreviewPage() {
-    const area  = document.getElementById('pdf-preview-area');
-    const label = document.getElementById('pdf-preview-page-label');
-    if (!pdfPageCanvases.length) return;
-
-    const total   = pdfPageCanvases.length;
-    const current = pdfCurrentPage + 1;
-    if (label) label.textContent = `ページ: ${current} / ${total}`;
-
-    area.innerHTML = '';
-    const src = pdfPageCanvases[pdfCurrentPage];
-    // 表示用に縮小コピー
-    const displayCanvas = document.createElement('canvas');
-    const maxW = area.clientWidth  - 32 || 800;
-    const maxH = area.clientHeight - 32 || 500;
-    const scale = Math.min(maxW / src.width, maxH / src.height, 1);
-    displayCanvas.width  = Math.round(src.width  * scale);
-    displayCanvas.height = Math.round(src.height * scale);
-    const ctx = displayCanvas.getContext('2d');
-    ctx.drawImage(src, 0, 0, displayCanvas.width, displayCanvas.height);
-    area.appendChild(displayCanvas);
-}
-
+// ヘッドレスブラウザ方式ではページングの概念が「プレビュー上のスクロール」に変わるためダミー化
 window.navigatePdfPage = function (delta) {
-    if (!pdfPageCanvases.length) return;
-    pdfCurrentPage = Math.max(0, Math.min(pdfPageCanvases.length - 1, pdfCurrentPage + delta));
-    renderPreviewPage();
+    console.log('ページナビゲーション機能は iframe プレビューでは不要(スクロールで確認)');
 };
 
 // ---------------------------------------------------
-// PDF保存
+// ファイル名生成
+// ---------------------------------------------------
+function generateDefaultFilename(ext) {
+    const name = (state.projectName || '工程表').replace(/[\\/:*?"<>|]/g, '_');
+    const now = new Date();
+    const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    return `${name}_${ymd}.${ext}`;
+}
+
+// ---------------------------------------------------
+// PDF保存 (Python APIへの送信)
 // ---------------------------------------------------
 window.executePdfSave = async function () {
-    showPdfLoading('PDF生成中...');
+    showPdfLoading('PDF出力エンジンへ送信中...');
     try {
         const settings = collectPdfSettings();
-        const { totalCanvas, leftPaneWidthPx } = await captureGanttToCanvas(settings);
-        const pages = sliceAndCompositePages(totalCanvas, leftPaneWidthPx, settings);
-        const pdf   = buildPdfFromPages(pages, settings.paperSize);
-
-        // data URI として取得
-        const dataUri = pdf.output('datauristring');
+        const htmlString = await buildPrintableHtml(settings);
         const defaultName = generateDefaultFilename('pdf');
 
         if (window.pywebview && window.pywebview.api && window.pywebview.api.save_pdf_file) {
-            const result = await window.pywebview.api.save_pdf_file(dataUri, defaultName);
+            // HTML文字列と設定（余白や用紙サイズ）を直接Pythonバックエンドに渡す
+            const result = await window.pywebview.api.save_pdf_file(htmlString, settings, defaultName);
             if (result) {
                 if (window.showToast) window.showToast('PDFを保存しました');
             }
         } else {
-            // フォールバック: ブラウザダウンロード
-            pdf.save(defaultName);
+            alert('PDF出力バックエンド(Playwright等)に接続できません。アプリから実行してください。');
         }
     } catch (e) {
         console.error('PDF保存エラー:', e);
@@ -428,28 +315,22 @@ window.executePdfSave = async function () {
 };
 
 // ---------------------------------------------------
-// PNG保存
+// PNG保存 (Python APIへの送信)
 // ---------------------------------------------------
 window.executePngSave = async function () {
-    showPdfLoading('PNG生成中...');
+    showPdfLoading('PNG出力エンジンへ送信中...');
     try {
         const settings = collectPdfSettings();
-        const { totalCanvas } = await captureGanttToCanvas(settings);
-
-        const dataUri     = totalCanvas.toDataURL('image/png');
+        const htmlString = await buildPrintableHtml(settings);
         const defaultName = generateDefaultFilename('png');
 
-        if (window.pywebview && window.pywebview.api && window.pywebview.api.save_image_file) {
-            const result = await window.pywebview.api.save_image_file(dataUri, defaultName);
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.save_png_file) {
+            const result = await window.pywebview.api.save_png_file(htmlString, defaultName);
             if (result) {
                 if (window.showToast) window.showToast('PNGを保存しました');
             }
         } else {
-            // フォールバック: ブラウザダウンロード
-            const a = document.createElement('a');
-            a.href     = dataUri;
-            a.download = defaultName;
-            a.click();
+            alert('PNG出力バックエンドに接続できません。アプリから実行してください。');
         }
     } catch (e) {
         console.error('PNG保存エラー:', e);

@@ -91,11 +91,43 @@ class Api:
         self._current_file_path = None
         return True
 
-    def save_pdf_file(self, data_uri, default_filename):
-        """JS から base64 PDF data URI を受け取りファイル保存"""
+    def generate_pdf_from_html(self, html_content, settings, file_path):
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(html_content, wait_until='load')
+                
+                # Default to A4 Landscape if not specified
+                paper_size = settings.get('paperSize', 'a4-landscape')
+                format_name = 'A3' if 'a3' in paper_size.lower() else 'A4'
+                
+                # Default margins (can be overridden by settings if passed from JS)
+                margin = {
+                    "top": "10mm",
+                    "bottom": "10mm",
+                    "left": "10mm",
+                    "right": "10mm"
+                }
+
+                page.pdf(
+                    path=file_path,
+                    format=format_name,
+                    landscape=True, # Always landscape for Gantt
+                    print_background=True,
+                    margin=margin
+                )
+                browser.close()
+            return True
+        except Exception as e:
+            print(f"Playwright PDF generation failed: {e}")
+            raise e
+
+    def save_pdf_file(self, html_content, settings, default_filename):
+        """JS からプレビュー用のHTML文字列と設定を受け取り、PlaywrightでPDF化して保存"""
         if not self._window:
             return False
-        import base64
 
         file_types = ('PDF Files (*.pdf)', 'All files (*.*)')
         result = self._window.create_file_dialog(
@@ -111,20 +143,59 @@ class Api:
             if len(result) > 0:
                 file_path = result[0]
                 try:
-                    # "data:application/pdf;base64," プレフィックスを除去
-                    if ',' in data_uri:
-                        b64_data = data_uri.split(',', 1)[1]
-                    else:
-                        b64_data = data_uri
-                    pdf_bytes = base64.b64decode(b64_data)
-                    with open(file_path, 'wb') as f:
-                        f.write(pdf_bytes)
+                    # HTML文字列をPlaywrightに渡してPDF生成
+                    self.generate_pdf_from_html(html_content, settings, file_path)
                     return True
                 except Exception as e:
                     print(f"PDF保存に失敗しました: {e}")
                     if self._window:
                         error_msg = str(e).replace("'", "\\'").replace("\n", "\\n")
                         self._window.evaluate_js(f"alert('PDFの保存に失敗しました:\\n{error_msg}')")
+                    return False
+        return False
+
+    def save_png_file(self, html_content, default_filename):
+        """JS からHTML文字列を受け取り、PlaywrightでPNG化して保存"""
+        if not self._window:
+            return False
+
+        file_types = ('PNG Files (*.png)', 'All files (*.*)')
+        result = self._window.create_file_dialog(
+            webview.FileDialog.SAVE,
+            directory='',
+            save_filename=default_filename,
+            file_types=file_types
+        )
+
+        if result:
+            if isinstance(result, str):
+                result = (result,)
+            if len(result) > 0:
+                file_path = result[0]
+                try:
+                    from playwright.sync_api import sync_playwright
+                    import tempfile, os
+                    with tempfile.NamedTemporaryFile(
+                        suffix='.html', delete=False, mode='w', encoding='utf-8'
+                    ) as f:
+                        f.write(html_content)
+                        tmp_path = f.name
+                    try:
+                        with sync_playwright() as p:
+                            browser = p.chromium.launch(headless=True)
+                            page = browser.new_page()
+                            page.set_viewport_size({'width': 2480, 'height': 3508})
+                            page.goto(f'file:///{tmp_path}', wait_until='load')
+                            page.screenshot(path=file_path, full_page=True)
+                            browser.close()
+                    finally:
+                        os.unlink(tmp_path)
+                    return True
+                except Exception as e:
+                    print(f"PNG保存に失敗しました: {e}")
+                    if self._window:
+                        error_msg = str(e).replace("'", "\\'").replace("\n", "\\n")
+                        self._window.evaluate_js(f"alert('PNGの保存に失敗しました:\\n{error_msg}')")
                     return False
         return False
 
@@ -224,7 +295,7 @@ def start_app():
         js_api=api
     )
     api._window = window 
-    webview.start(debug=True)
+    webview.start(debug=False)
 
 if __name__ == '__main__':
     start_app()

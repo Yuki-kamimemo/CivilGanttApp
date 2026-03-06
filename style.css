@@ -1048,6 +1048,7 @@
         flex-direction: column;
         flex: 1;
         min-height: 120px;
+        max-height: min(30vh, 250px);
         background: #ffffff;
         border-top: 3px solid #adb5bd;
     }

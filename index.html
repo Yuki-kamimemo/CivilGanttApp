@@ -149,7 +149,8 @@
                         </label>
                         <label class="pdf-settings-label">カレンダー幅
                             <div style="display:flex; align-items:center; gap:6px;">
-                                <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0" class="pdf-settings-input" style="width:70px;">
+                                <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0"
+                                    class="pdf-settings-input" style="width:70px;">
                                 <span style="font-size:11px; color:#6c757d;">(1.0が標準)</span>
                             </div>
                         </label>
@@ -172,29 +173,34 @@
                             ハンコ枠を表示する
                         </label>
                         <label class="pdf-settings-label">役職名1
-                            <input type="text" id="modal-print-stamp1" class="pdf-settings-input" placeholder="現場代理人" value="現場代理人">
+                            <input type="text" id="modal-print-stamp1" class="pdf-settings-input" placeholder="現場代理人"
+                                value="現場代理人">
                         </label>
                         <label class="pdf-settings-label">役職名2
-                            <input type="text" id="modal-print-stamp2" class="pdf-settings-input" placeholder="監理技術者" value="監理技術者">
+                            <input type="text" id="modal-print-stamp2" class="pdf-settings-input" placeholder="監理技術者"
+                                value="監理技術者">
                         </label>
                     </div>
                     <!-- ボタン群 -->
                     <div class="pdf-settings-buttons">
-                        <button type="button" class="pdf-btn pdf-btn-secondary" onclick="window.updatePdfPreview()">プレビュー更新</button>
-                        <button type="button" class="pdf-btn pdf-btn-primary" onclick="window.executePdfSave()">PDF保存</button>
-                        <button type="button" class="pdf-btn pdf-btn-secondary" onclick="window.executePngSave()">PNG保存</button>
-                        <button type="button" class="pdf-btn pdf-btn-cancel" onclick="window.closePrintModal()">キャンセル</button>
+                        <button type="button" class="pdf-btn pdf-btn-secondary"
+                            onclick="window.updatePdfPreview()">プレビュー更新</button>
+                        <button type="button" class="pdf-btn pdf-btn-primary"
+                            onclick="window.executePdfSave()">PDF保存</button>
+                        <!-- PNG保存はヘッドレスブラウザ方式では一旦非表示（必要なら後日Playwrightで実装可能） -->
+                        <!-- <button type="button" class="pdf-btn pdf-btn-secondary" onclick="window.executePngSave()">PNG保存</button> -->
+                        <button type="button" class="pdf-btn pdf-btn-cancel"
+                            onclick="window.closePrintModal()">キャンセル</button>
                     </div>
                 </div>
                 <!-- プレビューパネル -->
                 <div class="pdf-preview-panel">
-                    <div class="pdf-preview-header" id="pdf-preview-page-label">プレビュー更新を押してください</div>
-                    <div id="pdf-preview-area">
-                        <div class="pdf-preview-placeholder">設定を選択して「プレビュー更新」を押してください</div>
-                    </div>
-                    <div class="pdf-preview-footer">
-                        <button type="button" class="pdf-nav-btn" onclick="window.navigatePdfPage(-1)">◀ 前のページ</button>
-                        <button type="button" class="pdf-nav-btn" onclick="window.navigatePdfPage(1)">次のページ ▶</button>
+                    <div class="pdf-preview-header" id="pdf-preview-page-label">印刷プレビュー(A3/A4) -
+                        ここに表示されるレイアウトがそのままPDFになります</div>
+                    <div id="pdf-preview-area" style="flex:1; display:flex; flex-direction:column;">
+                        <iframe id="pdf-preview-iframe"
+                            style="flex:1; width:100%; border:1px solid #ccc; background: white;"
+                            title="PDF Preview"></iframe>
                     </div>
                 </div>
             </div>
@@ -445,9 +451,7 @@
     <script src="js/modals.js"></script>
     <script src="js/state-actions.js"></script>
     <script src="js/init.js"></script>
-    <script src="js/lib/html2canvas.min.js"></script>
-    <script src="js/lib/jspdf.umd.min.js"></script>
-    <script src="js/pdf-export.js"></script>
+    <script src="js/pdf-export.js?v=2"></script>
 </body>
 
 </html>
