@@ -91,6 +91,79 @@ class Api:
         self._current_file_path = None
         return True
 
+    def save_pdf_file(self, data_uri, default_filename):
+        """JS から base64 PDF data URI を受け取りファイル保存"""
+        if not self._window:
+            return False
+        import base64
+
+        file_types = ('PDF Files (*.pdf)', 'All files (*.*)')
+        result = self._window.create_file_dialog(
+            webview.FileDialog.SAVE,
+            directory='',
+            save_filename=default_filename,
+            file_types=file_types
+        )
+
+        if result:
+            if isinstance(result, str):
+                result = (result,)
+            if len(result) > 0:
+                file_path = result[0]
+                try:
+                    # "data:application/pdf;base64," プレフィックスを除去
+                    if ',' in data_uri:
+                        b64_data = data_uri.split(',', 1)[1]
+                    else:
+                        b64_data = data_uri
+                    pdf_bytes = base64.b64decode(b64_data)
+                    with open(file_path, 'wb') as f:
+                        f.write(pdf_bytes)
+                    return True
+                except Exception as e:
+                    print(f"PDF保存に失敗しました: {e}")
+                    if self._window:
+                        error_msg = str(e).replace("'", "\\'").replace("\n", "\\n")
+                        self._window.evaluate_js(f"alert('PDFの保存に失敗しました:\\n{error_msg}')")
+                    return False
+        return False
+
+    def save_image_file(self, data_uri, default_filename):
+        """JS から base64 PNG data URI を受け取りファイル保存"""
+        if not self._window:
+            return False
+        import base64
+
+        file_types = ('PNG Files (*.png)', 'All files (*.*)')
+        result = self._window.create_file_dialog(
+            webview.FileDialog.SAVE,
+            directory='',
+            save_filename=default_filename,
+            file_types=file_types
+        )
+
+        if result:
+            if isinstance(result, str):
+                result = (result,)
+            if len(result) > 0:
+                file_path = result[0]
+                try:
+                    if ',' in data_uri:
+                        b64_data = data_uri.split(',', 1)[1]
+                    else:
+                        b64_data = data_uri
+                    img_bytes = base64.b64decode(b64_data)
+                    with open(file_path, 'wb') as f:
+                        f.write(img_bytes)
+                    return True
+                except Exception as e:
+                    print(f"PNG保存に失敗しました: {e}")
+                    if self._window:
+                        error_msg = str(e).replace("'", "\\'").replace("\n", "\\n")
+                        self._window.evaluate_js(f"alert('PNGの保存に失敗しました:\\n{error_msg}')")
+                    return False
+        return False
+
     # ★改修：実務レベルのExcel出力機能（すべての矢印描画・クリティカルパス赤線化・シート分割）
     def export_to_excel(self, data_str, default_filename):
         if not self._window:

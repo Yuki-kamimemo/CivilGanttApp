@@ -120,20 +120,88 @@
     </div>
 
     <div id="print-modal" class="modal-overlay">
-        <div class="modal-content" style="width: 350px;">
-            <h3 style="border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">印刷・PDF出力設定</h3>
-            <div class="period-form">
-                <p style="font-size: 12px; color: #6c757d; margin-top: 0;">用紙に収めたい期間と、カレンダーの縮小率を設定します。</p>
-                <label>印刷開始日: <input type="date" id="modal-print-start"></label>
-                <label>印刷終了日: <input type="date" id="modal-print-end"></label>
-                <label>縮小・拡大率:
-                    <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0" style="width: 80px;">
-                    <span style="font-size: 12px; font-weight: normal; margin-left: 5px;">(1.0が標準)</span>
-                </label>
+        <div class="pdf-modal-content">
+            <!-- ヘッダー -->
+            <div class="pdf-modal-header">
+                <h3>PDF出力 / 印刷...</h3>
+                <button type="button" class="pdf-modal-close-btn" onclick="window.closePrintModal()">✕</button>
             </div>
-            <div class="modal-actions" style="margin-top: 25px;">
-                <button type="button" class="cancel" onclick="window.closePrintModal()">キャンセル</button>
-                <button type="button" class="save" onclick="window.executePrint()">印刷画面へ</button>
+            <!-- ボディ -->
+            <div class="pdf-modal-body">
+                <!-- 設定パネル -->
+                <div class="pdf-settings-panel">
+                    <div class="pdf-settings-section">
+                        <div class="pdf-settings-section-title">出力範囲</div>
+                        <label class="pdf-settings-label">開始日
+                            <input type="date" id="modal-print-start" class="pdf-settings-input">
+                        </label>
+                        <label class="pdf-settings-label">終了日
+                            <input type="date" id="modal-print-end" class="pdf-settings-input">
+                        </label>
+                    </div>
+                    <div class="pdf-settings-section">
+                        <div class="pdf-settings-section-title">ページ設定</div>
+                        <label class="pdf-settings-label">用紙サイズ
+                            <select id="modal-print-paper" class="pdf-settings-input">
+                                <option value="a4-landscape">A4 横</option>
+                                <option value="a3-landscape">A3 横</option>
+                            </select>
+                        </label>
+                        <label class="pdf-settings-label">カレンダー幅
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <input type="number" id="modal-print-zoom" step="0.1" min="0.1" max="3.0" class="pdf-settings-input" style="width:70px;">
+                                <span style="font-size:11px; color:#6c757d;">(1.0が標準)</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="pdf-settings-section">
+                        <div class="pdf-settings-section-title">出力オプション</div>
+                        <label class="pdf-settings-checkbox-label">
+                            <input type="checkbox" id="modal-print-show-notes" checked>
+                            備考欄を含める
+                        </label>
+                        <label class="pdf-settings-checkbox-label">
+                            <input type="checkbox" id="modal-print-show-daily" checked>
+                            日報エリアを含める
+                        </label>
+                    </div>
+                    <div class="pdf-settings-section">
+                        <div class="pdf-settings-section-title">ハンコ枠</div>
+                        <label class="pdf-settings-checkbox-label">
+                            <input type="checkbox" id="modal-print-show-stamp" checked>
+                            ハンコ枠を表示する
+                        </label>
+                        <label class="pdf-settings-label">役職名1
+                            <input type="text" id="modal-print-stamp1" class="pdf-settings-input" placeholder="現場代理人" value="現場代理人">
+                        </label>
+                        <label class="pdf-settings-label">役職名2
+                            <input type="text" id="modal-print-stamp2" class="pdf-settings-input" placeholder="監理技術者" value="監理技術者">
+                        </label>
+                    </div>
+                    <!-- ボタン群 -->
+                    <div class="pdf-settings-buttons">
+                        <button type="button" class="pdf-btn pdf-btn-secondary" onclick="window.updatePdfPreview()">プレビュー更新</button>
+                        <button type="button" class="pdf-btn pdf-btn-primary" onclick="window.executePdfSave()">PDF保存</button>
+                        <button type="button" class="pdf-btn pdf-btn-secondary" onclick="window.executePngSave()">PNG保存</button>
+                        <button type="button" class="pdf-btn pdf-btn-cancel" onclick="window.closePrintModal()">キャンセル</button>
+                    </div>
+                </div>
+                <!-- プレビューパネル -->
+                <div class="pdf-preview-panel">
+                    <div class="pdf-preview-header" id="pdf-preview-page-label">プレビュー更新を押してください</div>
+                    <div id="pdf-preview-area">
+                        <div class="pdf-preview-placeholder">設定を選択して「プレビュー更新」を押してください</div>
+                    </div>
+                    <div class="pdf-preview-footer">
+                        <button type="button" class="pdf-nav-btn" onclick="window.navigatePdfPage(-1)">◀ 前のページ</button>
+                        <button type="button" class="pdf-nav-btn" onclick="window.navigatePdfPage(1)">次のページ ▶</button>
+                    </div>
+                </div>
+            </div>
+            <!-- ローディングオーバーレイ -->
+            <div id="pdf-loading-overlay">
+                <div class="pdf-spinner"></div>
+                <div class="pdf-loading-text">処理中...</div>
             </div>
         </div>
     </div>
@@ -377,6 +445,9 @@
     <script src="js/modals.js"></script>
     <script src="js/state-actions.js"></script>
     <script src="js/init.js"></script>
+    <script src="js/lib/html2canvas.min.js"></script>
+    <script src="js/lib/jspdf.umd.min.js"></script>
+    <script src="js/pdf-export.js"></script>
 </body>
 
 </html>

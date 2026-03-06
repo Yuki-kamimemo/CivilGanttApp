@@ -1620,3 +1620,261 @@
         box-sizing: border-box;
         vertical-align: middle;
     }
+
+/* ============================================================
+   PDF・画像出力機能用スタイル
+   ============================================================ */
+
+/* ---- キャプチャモード（html2canvas 用） ---- */
+body.print-capture-mode { overflow: visible !important; }
+body.print-capture-mode .main-container { overflow: visible !important; width: max-content; height: auto !important; }
+body.print-capture-mode .gantt-wrapper { overflow: visible !important; }
+body.print-capture-mode .left-pane { overflow: hidden !important; box-shadow: none; }
+body.print-capture-mode .right-pane { overflow: visible !important; flex: none; }
+body.print-capture-mode .calendar-header { position: static !important; }
+body.print-capture-mode .daily-notes-wrapper { overflow: visible !important; height: auto; }
+body.print-capture-mode .daily-notes-content { overflow: visible !important; height: auto !important; }
+body.print-capture-mode #daily-notes-right { overflow: visible !important; height: auto !important; }
+body.print-capture-mode #daily-notes-grid { height: auto !important; }
+body.print-capture-mode .menubar,
+body.print-capture-mode .add-row-btn,
+body.print-capture-mode .add-period-btn,
+body.print-capture-mode .del-period-btn,
+body.print-capture-mode .toggle-btn,
+body.print-capture-mode .resize-handle,
+body.print-capture-mode .link-handle { display: none !important; }
+body.print-capture-mode .modal-overlay,
+body.print-capture-mode #color-palette-popup,
+body.print-capture-mode .context-menu,
+body.print-capture-mode .print-hide { display: none !important; }
+
+/* ---- PDF出力モーダル ---- */
+.pdf-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 85vw;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.pdf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.pdf-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #343a40;
+}
+
+.pdf-modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 4px 8px;
+    border-radius: 4px;
+    line-height: 1;
+}
+.pdf-modal-close-btn:hover { background: #f8f9fa; color: #343a40; }
+
+.pdf-modal-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ---- 設定パネル ---- */
+.pdf-settings-panel {
+    width: 280px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 15px;
+    border-right: 1px solid #dee2e6;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pdf-settings-section {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+.pdf-settings-section-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.pdf-settings-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 12px;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.pdf-settings-label:last-child { margin-bottom: 0; }
+
+.pdf-settings-input {
+    padding: 5px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pdf-settings-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #495057;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.pdf-settings-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.pdf-btn {
+    padding: 8px 14px;
+    border-radius: 5px;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.pdf-btn-primary { background: #0d6efd; color: #fff; }
+.pdf-btn-primary:hover { background: #0a58ca; }
+.pdf-btn-secondary { background: #6c757d; color: #fff; }
+.pdf-btn-secondary:hover { background: #5a6268; }
+.pdf-btn-cancel { background: #e9ecef; color: #343a40; }
+.pdf-btn-cancel:hover { background: #dee2e6; }
+
+/* ---- プレビューパネル ---- */
+.pdf-preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #e9ecef;
+    overflow: hidden;
+}
+
+.pdf-preview-header {
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #495057;
+    background: #fff;
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+#pdf-preview-area {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 16px;
+}
+
+#pdf-preview-area canvas {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    max-width: 100%;
+    display: block;
+}
+
+.pdf-preview-placeholder {
+    color: #adb5bd;
+    font-size: 14px;
+    margin: auto;
+    text-align: center;
+    padding-top: 40px;
+}
+
+.pdf-preview-footer {
+    padding: 8px 16px;
+    background: #fff;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.pdf-nav-btn {
+    padding: 6px 16px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    color: #495057;
+}
+.pdf-nav-btn:hover { background: #f8f9fa; }
+
+/* ---- ローディングオーバーレイ ---- */
+#pdf-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.85);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 8px;
+}
+
+#pdf-loading-overlay.visible {
+    display: flex;
+}
+
+.pdf-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e9ecef;
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: pdf-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+
+.pdf-loading-text {
+    font-size: 14px;
+    color: #495057;
+}
+
+@keyframes pdf-spin {
+    to { transform: rotate(360deg); }
+}

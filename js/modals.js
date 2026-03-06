@@ -520,103 +520,33 @@ window.executeConfirmModal = function () {
 };
 
 // ---------------------------------------------------
-// 印刷制御
+// 印刷 / PDF出力制御
 // ---------------------------------------------------
-let prePrintState = null;
-
 window.openPrintModal = function () {
-    document.getElementById('modal-print-start').value = state.displayStart;
-    document.getElementById('modal-print-end').value = state.displayEnd;
-    document.getElementById('modal-print-zoom').value = state.zoomRatio || 1.0;
+    // 基本設定の初期化
+    document.getElementById('modal-print-start').value = state.displayStart || '';
+    document.getElementById('modal-print-end').value   = state.displayEnd   || '';
+    document.getElementById('modal-print-zoom').value  = state.zoomRatio    || 1.0;
+
+    // 用紙サイズ・オプションのデフォルト
+    const paperSel = document.getElementById('modal-print-paper');
+    if (paperSel && !paperSel.value) paperSel.value = 'a4-landscape';
+
+    // プレビューエリアをリセット
+    const area  = document.getElementById('pdf-preview-area');
+    const label = document.getElementById('pdf-preview-page-label');
+    if (area)  area.innerHTML  = '<div class="pdf-preview-placeholder">設定を選択して「プレビュー更新」を押してください</div>';
+    if (label) label.textContent = 'プレビュー更新を押してください';
+
     document.getElementById('print-modal').style.display = 'flex';
 };
 
 window.closePrintModal = function () {
     document.getElementById('print-modal').style.display = 'none';
-};
-
-window.executePrint = function () {
-    prePrintState = {
-        displayStart: state.displayStart,
-        displayEnd: state.displayEnd,
-        zoomRatio: state.zoomRatio,
-        viewRange: state.viewRange
-    };
-
-    state.displayStart = document.getElementById('modal-print-start').value;
-    state.displayEnd = document.getElementById('modal-print-end').value;
-    state.zoomRatio = parseFloat(document.getElementById('modal-print-zoom').value) || 1.0;
-    state.viewRange = 'custom';
-
-    window.closePrintModal();
-    renderAll();
-
-    requestAnimationFrame(() => {
-        const mainContainer = document.querySelector('.main-container');
-        const leftBlock = mainContainer.firstElementChild;
-        const notesPane = document.getElementById('notes-pane');
-        const projectNotes = document.getElementById('project-notes');
-
-        const targetHeight = leftBlock.offsetHeight;
-        const PRINT_NOTES_MARGIN = 33;
-        if (notesPane) notesPane.style.setProperty('height', targetHeight + 'px', 'important');
-        if (projectNotes) projectNotes.style.setProperty('height', `calc(${targetHeight}px - ${PRINT_NOTES_MARGIN}px)`, 'important');
-
-        const leftPane = document.getElementById('left-pane');
-        const dailyNotesLeft = document.getElementById('daily-notes-left');
-        const COLLAPSED_WIDTH = 350;
-        const EXPANDED_WIDTH = 520;
-
-        if (leftPane && dailyNotesLeft) {
-            const targetWidth = leftPane.classList.contains('collapsed-view') ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
-            dailyNotesLeft.style.setProperty('width', targetWidth + 'px', 'important');
-            dailyNotesLeft.style.setProperty('min-width', targetWidth + 'px', 'important');
-            dailyNotesLeft.style.setProperty('max-width', targetWidth + 'px', 'important');
-        }
-
-        const afterPrintHandler = () => {
-            if (notesPane) notesPane.style.removeProperty('height');
-            if (projectNotes) projectNotes.style.removeProperty('height');
-
-            if (dailyNotesLeft) {
-                dailyNotesLeft.style.removeProperty('width');
-                dailyNotesLeft.style.removeProperty('min-width');
-                dailyNotesLeft.style.removeProperty('max-width');
-
-                // ★追加: レイアウト崩れを防ぐため、上の表の幅に合わせて強制的に再設定する
-                if (leftPane) {
-                    const currentWidth = leftPane.offsetWidth;
-                    dailyNotesLeft.style.width = currentWidth + 'px';
-                    dailyNotesLeft.style.minWidth = currentWidth + 'px';
-                }
-            }
-
-            state.displayStart = prePrintState.displayStart;
-            state.displayEnd = prePrintState.displayEnd;
-            state.zoomRatio = prePrintState.zoomRatio;
-            state.viewRange = prePrintState.viewRange;
-            renderAll();
-
-            // ★追加: 印刷画面から戻った際に、左右のスクロール位置を同期させる
-            requestAnimationFrame(() => {
-                const rightContainer = document.getElementById('right-container');
-                const dailyNotesRight = document.getElementById('daily-notes-right');
-                if (rightContainer && dailyNotesRight) {
-                    dailyNotesRight.scrollLeft = rightContainer.scrollLeft;
-                }
-            });
-            window.removeEventListener('afterprint', afterPrintHandler);
-        };
-
-        window.addEventListener('afterprint', afterPrintHandler);
-
-        // 描画の安定を待ってから印刷ダイアログを開く
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                window.print();
-            });
-        });
-    });
+    // メモリ解放
+    if (typeof pdfPageCanvases !== 'undefined') {
+        pdfPageCanvases.length = 0;
+    }
 };
 
 // ---------------------------------------------------
