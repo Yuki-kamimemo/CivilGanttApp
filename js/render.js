@@ -360,12 +360,13 @@ function renderTable() {
 
         tr.innerHTML = html;
         // input.value はDOM経由で設定（特殊文字・引用符を含む文字列でも正しく動作させるため）
+        // setAttribute も併用して outerHTML 取得時にも値が反映されるようにする（PDF出力対応）
         const koshuInput = tr.querySelector('.task-koshu');
-        if (koshuInput) koshuInput.value = task.koshu;
+        if (koshuInput) { koshuInput.value = task.koshu; koshuInput.setAttribute('value', task.koshu || ''); }
         const shubetsuInput = tr.querySelector('.task-shubetsu');
-        if (shubetsuInput) shubetsuInput.value = task.shubetsu;
+        if (shubetsuInput) { shubetsuInput.value = task.shubetsu; shubetsuInput.setAttribute('value', task.shubetsu || ''); }
         const saibetsuInput = tr.querySelector('.task-saibetsu');
-        if (saibetsuInput) saibetsuInput.value = task.saibetsu;
+        if (saibetsuInput) { saibetsuInput.value = task.saibetsu; saibetsuInput.setAttribute('value', task.saibetsu || ''); }
         tbody.appendChild(tr);
     });
 }

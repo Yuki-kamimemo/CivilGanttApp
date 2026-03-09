@@ -21,7 +21,7 @@
       "2026-06": "６月：排水工・構造物工",
       "2026-07": "７月：路盤工",
       "2026-08": "８月：舗装工",
-      "2026-09": "9月：付帯工・後片付け",
+      "2026-09": "９月：付帯工・後片付け",
       "2026-04-01": "作業開始",
       "2026-04-13": "ダンプ・バックホウ搬入"
     },
@@ -42,7 +42,7 @@
       "2026-08-15"
     ]
   },
-  "autoCreateBar": true,
+  "autoCreateBar": false,
   "texts": [],
   "shapes": [],
   "globalFontFamily": "'Meiryo', sans-serif",
@@ -83,6 +83,15 @@
           "progress": 0,
           "color": "#dc3545",
           "displayRow": 1
+        },
+        {
+          "pid": "y1koaquv9",
+          "dep": "",
+          "start": "2026-04-21",
+          "end": "2026-05-01",
+          "progress": 0,
+          "color": "#3b82f6",
+          "displayRow": 0
         }
       ]
     },
@@ -185,6 +194,15 @@
           "progress": 0,
           "color": "#dc3545",
           "displayRow": 2
+        },
+        {
+          "pid": "1xghxq0vr",
+          "dep": "",
+          "start": "2026-05-15",
+          "end": "2026-05-19",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 3
         }
       ]
     },
@@ -229,6 +247,15 @@
           "progress": 40,
           "color": "#06b6d4",
           "displayRow": 0
+        },
+        {
+          "pid": "697s0n7r4",
+          "dep": "",
+          "start": "2026-06-08",
+          "end": "2026-07-03",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 1
         }
       ]
     },
@@ -273,6 +300,15 @@
           "progress": 0,
           "color": "#8b5cf6",
           "displayRow": 0
+        },
+        {
+          "pid": "k6qyzwyow",
+          "dep": "",
+          "start": "2026-07-02",
+          "end": "2026-08-10",
+          "progress": 0,
+          "color": "#dc3545",
+          "displayRow": 1
         }
       ]
     },

@@ -65,99 +65,183 @@ async function buildPrintableHtml(settings) {
         viewRange: state.viewRange
     };
 
-    // 2. 印刷設定を適用してレンダリング
+    // 2. 印刷設定を適用して一度レンダリング（高さ測定用）
     state.displayStart = settings.printStart;
     state.displayEnd = settings.printEnd;
     state.zoomRatio = settings.zoom;
-    state.viewRange = 'custom'; // 印刷時は「全体表示」や指定範囲で固定
+    state.viewRange = 'custom';
     renderAll();
 
-    // スクロール位置を先頭に戻してからHTMLを取得
     const rc = document.getElementById('right-container');
     const dnr = document.getElementById('daily-notes-right');
     if (rc) rc.scrollLeft = 0;
     if (dnr) dnr.scrollLeft = 0;
 
-    // UI安定化のため少し待機
     await new Promise(r => setTimeout(r, 100));
 
-    // ★ 印刷高さ圧縮の計算（DOM測定はUI安定後に実施）
+    // 3. ★ ページサイズ・高さ・ganttZoom の計算
     const MM_TO_PX = 96 / 25.4;
     const isA3 = settings.paperSize === 'a3-landscape';
+    const paperWidthMm  = isA3 ? 420 : 297;
     const paperHeightMm = isA3 ? 297 : 210;
-    const printableHeightPx = (paperHeightMm - 20) * MM_TO_PX; // 20mm = 上下余白合計
-    const PROJ_HEADER_PX = 70;   // プロジェクト情報行
-    const STAMP_PX = settings.showStamp ? 90 : 0;  // ハンコ枠
-    // 日別備考の高さは作業画面の実際の高さを使用（固定値ではなくDOMから取得）
+    const printableWidthPx  = (paperWidthMm  - 20) * MM_TO_PX; // 左右余白各10mm
+    const printableHeightPx = (paperHeightMm - 20) * MM_TO_PX; // 上下余白各10mm
+
+    const PROJ_HEADER_PX = 70;
+    const STAMP_PX       = settings.showStamp ? 90 : 0;
+    const BUFFER_PX      = 20;
+
     const dailyNotesEl = document.querySelector('.daily-notes-wrapper');
     const DAILY_NOTES_PRINT_PX = settings.showDaily && dailyNotesEl
-        ? dailyNotesEl.offsetHeight
-        : 0;
-    const BUFFER_PX = 20;        // 余白バッファ
-    const availForGantt = printableHeightPx - PROJ_HEADER_PX - STAMP_PX -
-        (settings.showDaily ? DAILY_NOTES_PRINT_PX : 0) - BUFFER_PX;
+        ? dailyNotesEl.offsetHeight : 0;
 
-    // カレンダーヘッダー + 全チャート行の実際の高さを測定
     const calHeaderEl = document.getElementById('calendar-header');
-    const calHeaderH = calHeaderEl ? calHeaderEl.offsetHeight : 32;
+    const calHeaderH  = calHeaderEl ? calHeaderEl.offsetHeight : 32;
     const chartAreaEl = document.getElementById('chart-area');
     const actualGanttHeight = calHeaderH + (chartAreaEl ? chartAreaEl.scrollHeight : 400);
 
+    // gantt-wrapper と daily-notes-wrapper の両方に同じ ganttZoom を適用するため
+    // 合計高さに対して利用可能スペースの比率を計算
+    const availSpace       = printableHeightPx - PROJ_HEADER_PX - STAMP_PX - BUFFER_PX;
+    const totalZoomedHeight = actualGanttHeight + (settings.showDaily ? DAILY_NOTES_PRINT_PX : 0);
+
     let ganttZoom = 1.0;
-    if (actualGanttHeight > availForGantt && availForGantt > 0) {
-        ganttZoom = Math.max(0.3, availForGantt / actualGanttHeight);
+    if (totalZoomedHeight > availSpace && availSpace > 0) {
+        ganttZoom = Math.max(0.3, availSpace / totalZoomedHeight);
     }
 
-    // 3. ハンコ枠の一時的な更新
-    const stampContainer = document.querySelector('.stamp-container');
-    const origStampTitles = getStampTitles();
-    if (settings.showStamp) {
-        setStampTitles(settings.stamp1, settings.stamp2);
+    // 4. ★ 横方向ページ分割の計算
+    // 左パネル実幅を取得（ganttZoom適用後の視覚幅 = leftPaneWidth * ganttZoom）
+    const leftPaneEl   = document.querySelector('.left-pane');
+    const leftPaneWidth = leftPaneEl ? leftPaneEl.offsetWidth : 620;
+
+    // 右パネルの印刷可能幅（ganttZoom後）
+    const rightPaneAvailPx = printableWidthPx - leftPaneWidth * ganttZoom;
+
+    // 現在のセル幅（ganttZoom前） — renderAll()内で設定済み
+    const rawCellWidth = state.viewScale === 'day' ? CELL_WIDTH_DAY : CELL_WIDTH_MONTH;
+
+    // 1ページに収まるセル数
+    const cellsPerPage = Math.max(1, Math.floor(rightPaneAvailPx / (rawCellWidth * ganttZoom)));
+
+    // 日付範囲を各ページに分割
+    const pages = [];
+    if (state.viewScale === 'day') {
+        let cur = new Date(settings.printStart);
+        const end = new Date(settings.printEnd);
+        while (cur <= end) {
+            const pageEnd = new Date(cur);
+            pageEnd.setDate(pageEnd.getDate() + cellsPerPage - 1);
+            if (pageEnd > end) pageEnd.setTime(end.getTime());
+            pages.push({ start: formatDate(cur), end: formatDate(pageEnd) });
+            cur.setDate(cur.getDate() + cellsPerPage);
+        }
+    } else {
+        // 月単位：開始月から終了月まで
+        let curMonthStart = new Date(
+            new Date(settings.printStart).getFullYear(),
+            new Date(settings.printStart).getMonth(), 1
+        );
+        const endMonthStart = new Date(
+            new Date(settings.printEnd).getFullYear(),
+            new Date(settings.printEnd).getMonth(), 1
+        );
+        while (curMonthStart <= endMonthStart) {
+            // ページ末の月の初日
+            const pageEndMonthFirst = new Date(
+                curMonthStart.getFullYear(),
+                curMonthStart.getMonth() + cellsPerPage - 1, 1
+            );
+            const actualEndMonthFirst = pageEndMonthFirst <= endMonthStart
+                ? pageEndMonthFirst : endMonthStart;
+            // その月の最終日
+            const pageEndDate = new Date(
+                actualEndMonthFirst.getFullYear(),
+                actualEndMonthFirst.getMonth() + 1, 0
+            );
+            pages.push({ start: formatDate(curMonthStart), end: formatDate(pageEndDate) });
+            curMonthStart = new Date(
+                curMonthStart.getFullYear(),
+                curMonthStart.getMonth() + cellsPerPage, 1
+            );
+        }
     }
 
-    // 4. クローンを作成して印刷用HTMLを組み立てる
-    const mainContainerHtml = document.querySelector('.main-container').outerHTML;
-    const stampHtml = settings.showStamp && stampContainer ? stampContainer.outerHTML : '';
-
-    const projectInfoHtml = `
-        <div class="print-project-header" style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 10px; font-weight: bold;">
-            <div>工事名: ${state.projectName || ''}</div>
-            <div>事業者名: ${state.companyName || ''}</div>
-            <div>全体工期: ${state.projectStart || ''} ～ ${state.projectEnd || ''}</div>
-        </div>
-    `;
-
-    // 抽出するCSS (現在のstyle.cssを読み込むか、必要最低限のCSSをインライン化する)
-    // ここでは、Playwrightがレンダリングする際に同じCSSを参照できるように
-    // 抽出または絶対パスリンクを生成します。
-    // 今回は簡易的にローカルのスタイルシートの内容を取得して注入します (もしfetchが使えれば)
+    // 5. スタイルシートの読み込み
     let styleText = '';
     try {
         const styleSheetResponse = await fetch('style.css');
-        if (styleSheetResponse.ok) {
-            styleText = await styleSheetResponse.text();
-        }
+        if (styleSheetResponse.ok) styleText = await styleSheetResponse.text();
     } catch (e) {
-        console.warn('style.cssのフェッチに失敗しました (iframe環境でのみ動作が変わる可能性があります): ', e);
+        console.warn('style.cssのフェッチに失敗:', e);
     }
 
-    // 印刷時専用の微調整CSSを追加
-    // html2canvas用だった print-capture-mode とは異なり、本物の印刷用CSS
+    // 6. ハンコ枠の一時的な更新
+    const stampContainer = document.querySelector('.stamp-container');
+    const origStampTitles = getStampTitles();
+    if (settings.showStamp) setStampTitles(settings.stamp1, settings.stamp2);
+
+    const stampHtml = settings.showStamp && stampContainer ? stampContainer.outerHTML : '';
+    const projectInfoHtml = `
+        <div class="print-project-header" style="display:flex; align-items:stretch; margin-bottom:8px; border:1.5px solid #adb5bd; border-radius:4px; overflow:hidden; font-size:13px; line-height:1.3;">
+            <div style="display:flex; align-items:center; background:#e9ecef; padding:5px 10px; font-weight:bold; color:#495057; white-space:nowrap; border-right:1px solid #adb5bd;">工事名</div>
+            <div style="display:flex; align-items:center; padding:5px 12px; font-weight:bold; flex:1; border-right:1.5px solid #adb5bd;">${state.projectName || ''}</div>
+            <div style="display:flex; align-items:center; background:#e9ecef; padding:5px 10px; font-weight:bold; color:#495057; white-space:nowrap; border-right:1px solid #adb5bd;">事業者名</div>
+            <div style="display:flex; align-items:center; padding:5px 12px; font-weight:bold; border-right:1.5px solid #adb5bd;">${state.companyName || ''}</div>
+            <div style="display:flex; align-items:center; background:#e9ecef; padding:5px 10px; font-weight:bold; color:#495057; white-space:nowrap; border-right:1px solid #adb5bd;">全体工期</div>
+            <div style="display:flex; align-items:center; padding:5px 12px; font-weight:bold; white-space:nowrap;">${state.projectStart || ''} ～ ${state.projectEnd || ''}</div>
+        </div>`;
+
+    // 7. ★ 各ページのHTMLを生成して縦に積み重ねる
+    let allPagesHtml = '';
+    for (let i = 0; i < pages.length; i++) {
+        const pageInfo  = pages[i];
+        const isLastPage = i === pages.length - 1;
+
+        state.displayStart = pageInfo.start;
+        state.displayEnd   = pageInfo.end;
+        renderAll();
+        if (rc) rc.scrollLeft = 0;
+        if (dnr) dnr.scrollLeft = 0;
+        await new Promise(r => setTimeout(r, 80));
+
+        const pageMainHtml = document.querySelector('.main-container').outerHTML;
+        const pageBreak = isLastPage ? '' : 'page-break-after: always;';
+
+        allPagesHtml += `
+<div style="padding:10px; ${pageBreak}">
+    ${projectInfoHtml}
+    <div style="display:flex; justify-content:flex-end; margin-bottom:5px;">
+        ${stampHtml}
+    </div>
+    ${pageMainHtml}
+</div>`;
+    }
+
+    // 8. 退避した状態を復元
+    restoreStampTitles(origStampTitles);
+    state.displayStart = prePdfState.displayStart;
+    state.displayEnd   = prePdfState.displayEnd;
+    state.zoomRatio    = prePdfState.zoomRatio;
+    state.viewRange    = prePdfState.viewRange;
+    renderAll();
+
+    // 9. 印刷用CSS
     const printSpecificCss = `
         @page {
-            size: ${settings.paperSize === 'a3-landscape' ? 'A3' : 'A4'} landscape;
+            size: ${isA3 ? 'A3' : 'A4'} landscape;
             margin: 10mm;
         }
         body {
             background-color: white !important;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             overflow: visible !important;
         }
         .main-container {
             height: auto !important;
             overflow: visible !important;
-            /* flex-direction は変更しない（左右ペインの横並びを維持） */
+            border: 1px solid #adb5bd !important;
+            border-radius: 4px !important;
         }
         .gantt-wrapper {
             height: auto !important;
@@ -194,20 +278,49 @@ async function buildPrintableHtml(settings) {
             min-height: 0 !important;
             flex: none !important;
             overflow: hidden !important;
+            zoom: ${ganttZoom.toFixed(4)} !important;
         }
         #daily-notes-right {
             overflow: hidden !important;
             height: 100% !important;
             width: max-content !important;
         }
-        /* 備考エリアの表示切り替え */
+        /* タブ名: ganttZoom で縮小される分を逆補正して常に読みやすいサイズにする */
+        #daily-notes-left {
+            width: ${leftPaneWidth}px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: visible !important;
+            flex-shrink: 0 !important;
+        }
+        .daily-notes-content {
+            overflow: visible !important;
+        }
+        .daily-tab-actions {
+            display: flex !important;
+            align-items: center !important;
+            gap: ${(8 / ganttZoom).toFixed(1)}px !important;
+            padding: ${(8 / ganttZoom).toFixed(1)}px ${(16 / ganttZoom).toFixed(1)}px !important;
+            border-radius: ${(6 / ganttZoom).toFixed(1)}px !important;
+            border: ${(1 / ganttZoom).toFixed(1)}px solid #ced4da !important;
+            background: white !important;
+        }
+        .daily-tab-actions button {
+            display: none !important;
+        }
+        #current-daily-tab-name {
+            font-size: ${(13 / ganttZoom).toFixed(1)}px !important;
+            font-weight: bold !important;
+            white-space: nowrap !important;
+            color: #212529 !important;
+            display: block !important;
+        }
         .notes-pane { display: ${settings.showNotes ? 'flex' : 'none'} !important; height: auto !important; }
-
         .print-hide { display: none !important; }
     `;
 
-    const htmlString = `
-<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -218,25 +331,9 @@ async function buildPrintableHtml(settings) {
     </style>
 </head>
 <body class="print-capture-mode">
-    <div style="padding: 10px;">
-        ${projectInfoHtml}
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 5px;">
-            ${stampHtml}
-        </div>
-        ${mainContainerHtml}
-    </div>
+    ${allPagesHtml}
 </body>
 </html>`;
-
-    // 5. 退避した状態を復元
-    restoreStampTitles(origStampTitles);
-    state.displayStart = prePdfState.displayStart;
-    state.displayEnd = prePdfState.displayEnd;
-    state.zoomRatio = prePdfState.zoomRatio;
-    state.viewRange = prePdfState.viewRange;
-    renderAll();
-
-    return htmlString;
 }
 
 // ---------------------------------------------------
@@ -273,7 +370,7 @@ window.updatePdfPreview = async function () {
 };
 
 // ヘッドレスブラウザ方式ではページングの概念が「プレビュー上のスクロール」に変わるためダミー化
-window.navigatePdfPage = function (delta) {
+window.navigatePdfPage = function (_delta) {
     console.log('ページナビゲーション機能は iframe プレビューでは不要(スクロールで確認)');
 };
 
