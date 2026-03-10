@@ -44,9 +44,9 @@ function renderAll() {
 
     const ns = state.notesStyle || {};
     if (notesArea) {
-    notesArea.style.fontFamily = ns.fontFamily || '';
-    notesArea.style.fontSize = ns.fontSize ? ns.fontSize + 'px' : '';
-    notesArea.style.color = ns.color || '';
+        notesArea.style.fontFamily = ns.fontFamily || '';
+        notesArea.style.fontSize = ns.fontSize ? ns.fontSize + 'px' : '';
+        notesArea.style.color = ns.color || '';
         notesArea.style.fontWeight = ns.fontWeight || '';
         notesArea.style.backgroundColor = ns.backgroundColor || '';
         notesArea.style.writingMode = ns.writingMode || 'horizontal-tb';

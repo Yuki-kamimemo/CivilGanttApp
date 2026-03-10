@@ -525,17 +525,17 @@ window.executeConfirmModal = function () {
 window.openPrintModal = function () {
     // 基本設定の初期化
     document.getElementById('modal-print-start').value = state.displayStart || '';
-    document.getElementById('modal-print-end').value   = state.displayEnd   || '';
-    document.getElementById('modal-print-zoom').value  = state.zoomRatio    || 1.0;
+    document.getElementById('modal-print-end').value = state.displayEnd || '';
+    document.getElementById('modal-print-zoom').value = state.zoomRatio || 1.0;
 
     // 用紙サイズ・オプションのデフォルト
     const paperSel = document.getElementById('modal-print-paper');
     if (paperSel && !paperSel.value) paperSel.value = 'a4-landscape';
 
     // プレビューエリアをリセット
-    const area  = document.getElementById('pdf-preview-area');
+    const area = document.getElementById('pdf-preview-area');
     const label = document.getElementById('pdf-preview-page-label');
-    if (area)  area.innerHTML  = '<div class="pdf-preview-placeholder">設定を選択して「プレビュー更新」を押してください</div>';
+    if (area) area.innerHTML = '<div class="pdf-preview-placeholder">設定を選択して「プレビュー更新」を押してください</div>';
     if (label) label.textContent = 'プレビュー更新を押してください';
 
     document.getElementById('print-modal').style.display = 'flex';
