@@ -205,6 +205,21 @@ async function buildPrintableHtml(settings) {
         if (dnr) dnr.scrollLeft = 0;
         await new Promise(r => setTimeout(r, 80));
 
+        // ★追加：エディタ本体が備考欄（または日報セル）に居座っていると
+        // PDFにエディタUIが混入するため、キャプチャ直前だけ一時的に切り離す
+        const em = window.editorManager;
+        let originalParent = null;
+        let originalHtml = '';
+        if (em) {
+            // 現在のHTMLを保持してエディタを抜く
+            if (em.activeContainer) {
+                originalParent = em.activeContainer;
+                originalHtml = em.quill.root.innerHTML;
+                em.detachEditor();
+                originalParent.innerHTML = `<div class="ql-editor ql-editor-content" style="padding:0;">${originalHtml}</div>`;
+            }
+        }
+
         const pageMainHtml = document.querySelector('.main-container').outerHTML;
         const pageBreak = isLastPage ? '' : 'page-break-after: always;';
 
@@ -216,6 +231,16 @@ async function buildPrintableHtml(settings) {
     </div>
     ${pageMainHtml}
 </div>`;
+
+        // ★追加：キャプチャが終わったのでエディタを元の位置に戻す
+        if (em && originalParent) {
+            if (originalParent === em.defaultContainer) {
+                em.dockToDefault();
+            } else {
+                // インライン編集中の場合はその場所に戻す
+                em.openEditor(originalParent, em.onSaveCallback, originalParent.style.writingMode === 'vertical-rl');
+            }
+        }
     }
 
     // 8. 退避した状態を復元

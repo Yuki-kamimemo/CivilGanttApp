@@ -168,6 +168,15 @@ class GlobalEditorManager {
         this.dockToDefault();
     }
     
+    /**
+     * エディタを完全にDOMから切り離す（PDFエクスポート用）
+     */
+    detachEditor() {
+        if (this.singletonEditorWrap.parentNode) {
+            this.singletonEditorWrap.parentNode.removeChild(this.singletonEditorWrap);
+        }
+    }
+
     dockToDefault() {
         if (!this.defaultContainer) return;
 

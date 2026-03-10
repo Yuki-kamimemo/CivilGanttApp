@@ -165,15 +165,15 @@ function renderDailyNotes() {
 
         // インライン編集のフック
         textarea.addEventListener('mousedown', (e) => {
-            // バブリングを止めて「画面外クリック判定（閉じる処理）」を阻止
-            e.preventDefault(); // デフォルトの動作を抑制
-            e.stopPropagation();
-
-            window.selectInput('daily_notes');
-
+            // すでに自分が編集対象（アクティブ）なら、何もしないでブラウザの標準動作（選択など）に任せる
             if (window.editorManager && window.editorManager.activeContainer === textarea) {
                 return;
             }
+
+            // バブリングを止めて「画面外クリック判定（閉じる処理）」を阻止
+            e.stopPropagation();
+
+            window.selectInput('daily_notes');
 
             if (window.editorManager) {
                 const isVertical = currentWM === 'vertical-rl';
@@ -717,9 +717,11 @@ function drawTextBoxes(chartArea) {
         // ドラッグ移動設定
         div.addEventListener('mousedown', (e) => {
             if (currentTool !== 'pointer') return;
-            // エディタマネージャーがこの要素を編集中の場合はドラッグを無効化
+            // エディタマネージャーがこの要素を編集中の場合はドラッグを無効化し、テキスト選択を可能にする
             if (window.editorManager && window.editorManager.activeContainer === div) {
-                e.stopPropagation();
+                // stopPropagation() を呼ぶと外側の判定（エディタを閉じる等）を止められるが、
+                // ここではあえて何もしない（または最小限の停止に留める）ことで
+                // ブラウザの標準挙動（選択）を優先させます。
                 return;
             }
 
