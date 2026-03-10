@@ -680,13 +680,23 @@ function drawTextBoxes(chartArea) {
         }
 
         div = document.createElement('div');
-        div.className = 'chart-text-box';
+        // ql-editor クラスを付与することで、Quillの書式（ql-size等）を有効にする
+        div.className = 'chart-text-box ql-editor ql-editor-content';
         div.dataset.id = txt.id;
         div.innerHTML = txt.text || '';
 
+        // 基本的な配置スタイル（padding:0 は ql-editor のデフォルトを打ち消すため）
+        div.style.position = 'absolute';
+        div.style.padding = '5px'; 
         div.style.left = txt.x + 'px'; div.style.top = txt.y + 'px';
         div.style.fontFamily = txt.fontFamily || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-        div.style.fontSize = (txt.fontSize || 12) + 'px';
+        
+        // 内部にリッチテキスト（HTML）がある場合は、コンテナ側でのfontSize指定を避ける
+        // (Quill内部の span.ql-size-... 等に任せる)
+        if (!txt.text || !txt.text.includes('<')) {
+            div.style.fontSize = (txt.fontSize || 12) + 'px';
+        }
+        
         div.style.color = txt.color || '#212529';
         div.style.backgroundColor = txt.backgroundColor || 'transparent';
         div.style.borderStyle = txt.borderStyle || 'solid';
@@ -697,9 +707,20 @@ function drawTextBoxes(chartArea) {
         if (txt.height) div.style.height = txt.height + 'px';
 
         div.style.display = 'flex';
+        div.style.flexDirection = 'column';
+        div.style.overflow = 'hidden';
+
         const alignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
-        div.style.justifyContent = alignMap[txt.textAlign] || 'flex-start';
-        div.style.alignItems = txt.verticalAlign || 'flex-start';
+        
+        // 内部にリッチテキストがある場合は、Quillの <p class="ql-align-..."> に任せるため、
+        // コンテナ側の flex 揃えは補助的なものに留める
+        if (txt.text && txt.text.includes('ql-align-')) {
+            div.style.justifyContent = 'flex-start';
+            div.style.alignItems = 'stretch';
+        } else {
+            div.style.justifyContent = txt.verticalAlign || 'flex-start';
+            div.style.alignItems = alignMap[txt.textAlign] || 'flex-start';
+        }
 
         if (selectedItem && selectedItem.type === 'text' && selectedItem.textId === txt.id) div.classList.add('selected');
 
