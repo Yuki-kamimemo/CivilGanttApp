@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Civil Schedule Master</title>
     <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="js/lib/tabulator/tabulator.min.css">
+    <link rel="stylesheet" href="js/lib/quill/quill.snow.css">
     <link rel="stylesheet" href="print.css" media="print">
     <link rel="icon" href="data:,">
 </head>
@@ -44,6 +46,13 @@
             <div class="dropdown-content">
                 <div onclick="window.openHolidayModal()">休日（非稼働日）設定...</div>
             </div>
+        </div>
+    </div>
+
+    <!-- グローバル Quill ツールバー（ドック式・常時表示） -->
+    <div id="global-quill-toolbar-container" class="print-hide" style="display: none; background: #f3f4f6; border-bottom: 1px solid #ddd;">
+        <div id="global-quill-toolbar">
+            <!-- GlobalEditorManager によって標準ボタンが自動構築されます -->
         </div>
     </div>
 
@@ -433,9 +442,7 @@
                 <button id="notes-toggle-btn" onclick="window.toggleNotes()" class="print-hide pane-toggle-btn"
                     title="備考欄を折りたたむ">▶</button>
             </div>
-            <div id="project-notes" class="project-notes-editor" contenteditable="true"
-                onfocus="window.selectInput('notes')" onblur="window.handleNotesChange()">
-            </div>
+            <div id="project-notes-editor-container" class="ql-editor-content" style="flex: 1; overflow-y: auto; padding: 5px;"></div>
         </div>
 
     </div>
@@ -444,10 +451,15 @@
         <div class="color-swatches-grid" id="color-swatches-grid"></div>
     </div>
 
+    <script src="js/lib/tabulator/tabulator.min.js"></script>
+    <script src="js/lib/quill/quill.min.js"></script>
+    
+    <script src="js/global-editor-manager.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/globals.js"></script>
     <script src="js/events.js"></script>
     <script src="js/render.js"></script>
+    <script src="js/notes-editor.js"></script>
     <script src="js/modals.js"></script>
     <script src="js/state-actions.js"></script>
     <script src="js/init.js"></script>

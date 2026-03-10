@@ -183,6 +183,45 @@
         width: 300px;
     }
 
+    .ql-editor-content ul,
+    .ql-editor-content ol {
+        margin: 0;
+        padding-left: 1.2em;
+        /* 縦書きの場合、これは上部への字下げとして機能します */
+    }
+
+    /* ---------------------------------------------------
+       Quill 統合ツールバーとインラインエディタのスタイル
+       --------------------------------------------------- */
+    
+    #global-quill-toolbar-container {
+        position: relative;
+        z-index: 15;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    #global-quill-toolbar {
+        border: none !important;
+        padding: 5px 20px !important;
+    }
+
+    /* セルがインラインエディタ化したときのコンテナ枠線除去 */
+    .daily-note-cell .ql-container.ql-snow,
+    #project-notes-editor-container.ql-container.ql-snow,
+    #singleton-quill-editor.ql-container.ql-snow {
+        border: none !important;
+    }
+    
+    /* シングルトン枠の余白調整 */
+    #singleton-quill-editor .ql-editor {
+        padding: 5px;
+    }
+
+    /* 縦書きエディタ化した場合のスタイル適用 */
+    .vertical-editor .ql-editor {
+        writing-mode: vertical-rl;
+    }
+    
     .modal-content h3 {
         margin-top: 0;
         margin-bottom: 15px;

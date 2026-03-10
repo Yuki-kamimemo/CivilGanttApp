@@ -37,17 +37,21 @@ function renderAll() {
     shiftControls.style.display = (state.viewRange === 'custom') ? 'none' : 'flex';
 
     // 備考欄の適用
-    const notesArea = document.getElementById('project-notes');
-    if (document.activeElement !== notesArea) notesArea.innerHTML = state.notes || '';
+    const notesArea = document.getElementById('project-notes-editor-container');
+    if (window.applyNotesToEditor) {
+        window.applyNotesToEditor();
+    }
 
     const ns = state.notesStyle || {};
+    if (notesArea) {
     notesArea.style.fontFamily = ns.fontFamily || '';
     notesArea.style.fontSize = ns.fontSize ? ns.fontSize + 'px' : '';
     notesArea.style.color = ns.color || '';
-    notesArea.style.fontWeight = ns.fontWeight || '';
-    notesArea.style.backgroundColor = ns.backgroundColor || '';
-    notesArea.style.writingMode = ns.writingMode || 'horizontal-tb';
-    notesArea.style.display = 'flex';
+        notesArea.style.fontWeight = ns.fontWeight || '';
+        notesArea.style.backgroundColor = ns.backgroundColor || '';
+        notesArea.style.writingMode = ns.writingMode || 'horizontal-tb';
+        notesArea.style.display = 'flex';
+    }
     notesArea.style.flexDirection = 'column';
 
     const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
@@ -123,8 +127,10 @@ function renderDailyNotes() {
         cell.style.minWidth = widthPx + 'px';
 
         const textarea = document.createElement('div');
-        textarea.contentEditable = "true";
-        textarea.style.cssText = "width:100%; height:100%; box-sizing:border-box; padding:5px; outline:none; overflow-y:auto; display:flex; flex-direction:column;";
+        // Quillの仕様にあわせたセルスタイル
+        textarea.style.cssText = "width:100%; height:100%; box-sizing:border-box; padding:5px; outline:none; overflow-y:auto; display:flex; flex-direction:column; cursor: pointer;";
+        textarea.classList.add('ql-editor', 'ql-editor-content');
+        textarea.title = "クリックで日報を編集";
 
         const ds = state.dailyNotesStyle || {};
         textarea.style.fontFamily = ds.fontFamily || '';
@@ -154,9 +160,28 @@ function renderDailyNotes() {
             else textarea.style.backgroundColor = 'transparent';
         }
 
+        // Quillエディタから保存されたHTMLをそのまま流し込む
         textarea.innerHTML = tabData[dateStr] || '';
-        textarea.onblur = (e) => window.handleDailyNoteChange(dateStr, e.target.innerHTML);
-        textarea.onfocus = () => window.selectInput('daily_notes');
+
+        // インライン編集のフック
+        textarea.addEventListener('mousedown', (e) => {
+            // バブリングを止めて「画面外クリック判定（閉じる処理）」を阻止
+            e.stopPropagation();
+
+            window.selectInput('daily_notes');
+
+            if (window.editorManager && window.editorManager.activeContainer === textarea) {
+                return;
+            }
+
+            if (window.editorManager) {
+                const isVertical = currentWM === 'vertical-rl';
+                window.editorManager.openEditor(textarea, (html, delta) => {
+                    const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
+                    window.handleDailyNoteChange(dateStr, cleanHtml);
+                }, isVertical);
+            }
+        });
 
         cell.appendChild(textarea);
         grid.appendChild(cell);

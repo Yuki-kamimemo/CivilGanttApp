@@ -263,6 +263,9 @@ function isUIElementClick(e) {
     return e.target.closest('.context-menu') ||
         e.target.closest('button') ||
         e.target.closest('.menubar') ||
+        e.target.closest('.ql-toolbar') ||    // Quillエディタのツールバー
+        e.target.closest('.ql-container') ||  // Quillエディタのコンテナ
+        e.target.closest('.daily-note-cell') || // 日報のセル自体のクリックを許可
         e.target.tagName === 'INPUT' ||
         e.target.tagName === 'TEXTAREA' ||
         e.target.closest('[contenteditable="true"]');
