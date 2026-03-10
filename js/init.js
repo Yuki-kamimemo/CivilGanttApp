@@ -73,7 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const clickY = e.clientY - rect.top + chartAreaObj.scrollTop;
 
         const newId = generateId();
-        state.texts.push({ id: newId, text: '', x: clickX, y: clickY, width: 100, height: 30 });
+        const newTxt = { id: newId, text: '', x: clickX, y: clickY, width: 100, height: 30, textAlign: 'center', verticalAlign: 'center' };
+        state.texts.push(newTxt);
         window.setTool('pointer');
 
         selectedItem = { type: 'text', textId: newId };
@@ -82,11 +83,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             const newDiv = document.querySelector(`.chart-text-box[data-id="${newId}"]`);
-            if (newDiv) {
-                newDiv.contentEditable = "true";
-                newDiv.focus();
+            if (newDiv && window.editorManager) {
+                // 新規作成時に即座にQuillエディタを起動
+                window.editorManager.openEditor(newDiv, (html, delta, boxStyles) => {
+                    const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
+                    newTxt.text = cleanHtml;
+                    if (boxStyles) {
+                        newTxt.borderStyle = boxStyles.borderStyle;
+                        newTxt.borderWidth = boxStyles.borderWidth;
+                        newTxt.borderColor = boxStyles.borderColor;
+                        newTxt.backgroundColor = boxStyles.backgroundColor;
+                    }
+                    window.saveStateToHistory();
+                    window.renderChart();
+                }, false);
             }
-        }, 50);
+        }, 100);
     });
 
     window.saveStateToHistory();

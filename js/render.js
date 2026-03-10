@@ -665,7 +665,21 @@ function drawTodayLine(chartArea, dStart, dEnd) {
 // テキストボックスの配置
 function drawTextBoxes(chartArea) {
     state.texts.forEach(txt => {
-        const div = document.createElement('div');
+        // すでに編集中のコンテナがある場合、そのコンテナは再作成せずに維持したい
+        const isEditingThis = window.editorManager && window.editorManager.activeContainer && window.editorManager.activeContainer.dataset.id === txt.id;
+        
+        let div;
+        if (isEditingThis) {
+            div = window.editorManager.activeContainer;
+            // 座標やサイズのみ更新（内容はQuillが管理中なので触らない）
+            div.style.left = txt.x + 'px'; div.style.top = txt.y + 'px';
+            if (txt.width) div.style.width = txt.width + 'px';
+            if (txt.height) div.style.height = txt.height + 'px';
+            chartArea.appendChild(div);
+            return; // 編集中の場合は以下の新規作成・イベント設定をスキップ
+        }
+
+        div = document.createElement('div');
         div.className = 'chart-text-box';
         div.dataset.id = txt.id;
         div.innerHTML = txt.text || '';
@@ -689,44 +703,64 @@ function drawTextBoxes(chartArea) {
 
         if (selectedItem && selectedItem.type === 'text' && selectedItem.textId === txt.id) div.classList.add('selected');
 
-        // イベント設定：ダブルクリックで編集
+        // イベント設定：ダブルクリックで編集（シングルクリックは選択と移動に使う）
+        // ただし、すでに選択されている状態でクリックした場合は編集を開始する
+        div.addEventListener('click', (e) => {
+            if (currentTool !== 'pointer') return;
+            // エディタマネージャーがこの要素を編集中の場合は何もしない（Quillに任せる）
+            if (window.editorManager && window.editorManager.activeContainer === div) {
+                return;
+            }
+
+            // すでに選択されているテキストボックスを再度クリックした場合は編集開始
+            if (selectedItem && selectedItem.type === 'text' && selectedItem.textId === txt.id) {
+                startEditingTextBox(div, txt);
+            }
+        });
+
         div.addEventListener('dblclick', (e) => {
             if (currentTool !== 'pointer') return;
             e.stopPropagation();
-
-            if (window.editorManager) {
-                const isVertical = div.style.writingMode === 'vertical-rl';
-                window.editorManager.openEditor(div, (html, delta, boxStyles) => {
-                    const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
-                    txt.text = cleanHtml;
-                    
-                    // ボックススタイルの保存
-                    if (boxStyles) {
-                        txt.borderStyle = boxStyles.borderStyle;
-                        txt.borderWidth = boxStyles.borderWidth;
-                        txt.borderColor = boxStyles.borderColor;
-                        txt.backgroundColor = boxStyles.backgroundColor;
-                    }
-                    
-                    window.saveStateToHistory();
-                    window.renderChart();
-                }, isVertical);
-            }
+            startEditingTextBox(div, txt);
         });
+
+        // 共通の編集開始処理
+        function startEditingTextBox(targetDiv, targetTxt) {
+            if (!window.editorManager) return;
+            const isVertical = targetDiv.style.writingMode === 'vertical-rl';
+            
+            window.editorManager.openEditor(targetDiv, (html, delta, boxStyles) => {
+                const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
+                targetTxt.text = cleanHtml;
+                
+                if (boxStyles) {
+                    targetTxt.borderStyle = boxStyles.borderStyle;
+                    targetTxt.borderWidth = boxStyles.borderWidth;
+                    targetTxt.borderColor = boxStyles.borderColor;
+                    targetTxt.backgroundColor = boxStyles.backgroundColor;
+                }
+                
+                window.saveStateToHistory();
+                // 編集終了後の再描画。編集中（activeContainerがある間）は全体再描画を抑制するのが望ましい
+                window.renderChart();
+            }, isVertical);
+        }
 
         // ドラッグ移動設定
         div.addEventListener('mousedown', (e) => {
             if (currentTool !== 'pointer') return;
-            // エディタマネージャーがこの要素を編集中の場合はドラッグを無効化し、テキスト選択を可能にする
+            // エディタマネージャーがこの要素を編集中の場合はドラッグを無効化
             if (window.editorManager && window.editorManager.activeContainer === div) {
-                // stopPropagation() を呼ぶと外側の判定（エディタを閉じる等）を止められるが、
-                // ここではあえて何もしない（または最小限の停止に留める）ことで
-                // ブラウザの標準挙動（選択）を優先させます。
                 return;
             }
 
             e.stopPropagation();
             selectedItem = { type: 'text', textId: txt.id };
+            // 他の要素の選択を解除
+            document.querySelectorAll('.chart-text-box, .task-bar').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+            
+            if (window.updateFormatToolbar) window.updateFormatToolbar();
 
             if (e.button === 0) {
                 const rect = div.getBoundingClientRect();
