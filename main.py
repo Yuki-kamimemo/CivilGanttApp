@@ -1,3 +1,8 @@
+# Civil Schedule Master (CivilGanttApp)
+# Copyright (c) 2026 [Your Company Name]
+# All rights reserved.
+# This software is proprietary and confidential.
+
 import webview
 import os
 import sys

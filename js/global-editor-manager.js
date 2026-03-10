@@ -1,3 +1,10 @@
+/**
+ * Civil Schedule Master (CivilGanttApp)
+ * Copyright (c) 2026 [Your Company Name]
+ * All rights reserved.
+ * This software is proprietary and confidential.
+ */
+
 // ---------------------------------------------------
 // グローバル Quill ツールバー管理および シングルトンエディタ
 // （備考欄をデフォルトドックとし、日報クリック時だけ一時的に移動する）
