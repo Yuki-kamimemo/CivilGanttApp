@@ -196,7 +196,7 @@
     
     #global-quill-toolbar-container {
         position: relative;
-        z-index: 15;
+        z-index: 25; /* ドロップダウンメニューが他の要素の下に隠れるのを防ぐ */
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
     
