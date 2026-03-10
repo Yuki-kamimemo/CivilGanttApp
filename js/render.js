@@ -166,6 +166,7 @@ function renderDailyNotes() {
         // インライン編集のフック
         textarea.addEventListener('mousedown', (e) => {
             // バブリングを止めて「画面外クリック判定（閉じる処理）」を阻止
+            e.preventDefault(); // デフォルトの動作を抑制
             e.stopPropagation();
 
             window.selectInput('daily_notes');
@@ -176,6 +177,11 @@ function renderDailyNotes() {
 
             if (window.editorManager) {
                 const isVertical = currentWM === 'vertical-rl';
+                // 前のエディタが残っている可能性を考慮して一旦閉じる
+                if (window.editorManager.activeContainer && window.editorManager.activeContainer !== window.editorManager.defaultContainer) {
+                    window.editorManager.closeEditor();
+                }
+                
                 window.editorManager.openEditor(textarea, (html, delta) => {
                     const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
                     window.handleDailyNoteChange(dateStr, cleanHtml);
@@ -687,34 +693,38 @@ function drawTextBoxes(chartArea) {
         div.addEventListener('dblclick', (e) => {
             if (currentTool !== 'pointer') return;
             e.stopPropagation();
-            div.contentEditable = "true";
-            div.style.cursor = "text";
-            div.focus();
-        });
-        div.addEventListener('blur', () => {
-            div.contentEditable = "false";
-            div.style.cursor = "move";
-            txt.text = div.innerHTML;
-            window.saveStateToHistory();
+
+            if (window.editorManager) {
+                const isVertical = div.style.writingMode === 'vertical-rl';
+                window.editorManager.openEditor(div, (html, delta, boxStyles) => {
+                    const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
+                    txt.text = cleanHtml;
+                    
+                    // ボックススタイルの保存
+                    if (boxStyles) {
+                        txt.borderStyle = boxStyles.borderStyle;
+                        txt.borderWidth = boxStyles.borderWidth;
+                        txt.borderColor = boxStyles.borderColor;
+                        txt.backgroundColor = boxStyles.backgroundColor;
+                    }
+                    
+                    window.saveStateToHistory();
+                    window.renderChart();
+                }, isVertical);
+            }
         });
 
         // ドラッグ移動設定
         div.addEventListener('mousedown', (e) => {
             if (currentTool !== 'pointer') return;
-            if (div.contentEditable === "true") { e.stopPropagation(); return; }
+            // エディタマネージャーがこの要素を編集中の場合はドラッグを無効化
+            if (window.editorManager && window.editorManager.activeContainer === div) {
+                e.stopPropagation();
+                return;
+            }
 
             e.stopPropagation();
             selectedItem = { type: 'text', textId: txt.id };
-            // テキストボックスがeditingモードでない場合、以前の選択範囲を消去する
-            if (window.clearSavedSelection) window.clearSavedSelection();
-            window.updateFormatToolbar();
-            document.querySelectorAll('.chart-text-box').forEach(el => el.classList.remove('selected'));
-            div.classList.add('selected');
-
-            if (e.button === 2) {
-                window.showContextMenu(e, "テキスト操作", 'text', { textId: txt.id });
-                return;
-            }
 
             if (e.button === 0) {
                 const rect = div.getBoundingClientRect();

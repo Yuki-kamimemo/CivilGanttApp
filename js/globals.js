@@ -258,14 +258,14 @@ document.addEventListener('keydown', (e) => {
 
 // ヘルパー関数: UI要素でのクリックかどうかを判定
 function isUIElementClick(e) {
-    // カラーパレットのポップアップ内のクリックは除外（選択範囲の復元が必要なため）
     if (e.target.closest('#color-palette-popup')) return false;
     return e.target.closest('.context-menu') ||
         e.target.closest('button') ||
         e.target.closest('.menubar') ||
         e.target.closest('.ql-toolbar') ||    // Quillエディタのツールバー
         e.target.closest('.ql-container') ||  // Quillエディタのコンテナ
-        e.target.closest('.daily-note-cell') || // 日報のセル自体のクリックを許可
+        e.target.closest('.daily-note-cell') || 
+        e.target.closest('.ql-editor') ||     // Quillのエディタエリア本体
         e.target.tagName === 'INPUT' ||
         e.target.tagName === 'TEXTAREA' ||
         e.target.closest('[contenteditable="true"]');
@@ -275,8 +275,7 @@ function isUIElementClick(e) {
 function isChartElementClick(e) {
     return e.target.closest('.task-bar') ||
         e.target.closest('path') ||
-        e.target.closest('.chart-text-box') ||
-        e.target.closest('#format-toolbar');
+        e.target.closest('.chart-text-box');
 }
 
 document.addEventListener('mousedown', (e) => {

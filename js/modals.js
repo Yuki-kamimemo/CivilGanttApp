@@ -206,7 +206,10 @@ if (_colorPalettePopup) {
 
 window.updateFormatToolbar = function () {
     const textOnlyGroup = document.getElementById('text-only-formats');
+    if (!textOnlyGroup) return; // ツールバーがない場合は何もしない
+
     let target = null;
+    // ... (rest of the function is now protected by the return above)
 
     if (selectedItem) {
         if (selectedItem.type === 'text') {
