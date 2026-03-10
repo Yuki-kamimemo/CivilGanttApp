@@ -220,6 +220,25 @@ async function buildPrintableHtml(settings) {
             }
         }
 
+        // ★追加：備考欄の高さチェックと自動圧縮（A3横サイズへの適合）
+        const notesContainer = document.getElementById('project-notes-editor-container');
+        if (notesContainer && settings.showNotes) {
+            const LIMIT_HEIGHT = 880; // A3横の安全な高さ（px）
+            const contentHeight = notesContainer.scrollHeight;
+            
+            // もし内容が制限を超えていたら、縮小して収める
+            if (contentHeight > LIMIT_HEIGHT) {
+                const scale = (LIMIT_HEIGHT / contentHeight).toFixed(3);
+                notesContainer.style.transform = `scale(${scale})`;
+                notesContainer.style.transformOrigin = 'top center';
+                // 縮小後の描画崩れを防ぐため、元のコンテナの高さは維持する
+                notesContainer.style.height = `${contentHeight}px`; 
+            } else {
+                notesContainer.style.transform = '';
+                notesContainer.style.height = '';
+            }
+        }
+
         const pageMainHtml = document.querySelector('.main-container').outerHTML;
         const pageBreak = isLastPage ? '' : 'page-break-after: always;';
 

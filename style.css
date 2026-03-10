@@ -1039,6 +1039,9 @@
         box-shadow: -2px 0 5px rgba(0, 0, 0, 0.02);
         transition: width 0.2s ease, min-width 0.2s ease;
         z-index: 10;
+        /* A3横の高さ制限の基準（ヘッダー等を除いた安全圏） */
+        max-height: 880px; 
+        overflow: hidden;
     }
 
     .notes-pane.collapsed {
