@@ -220,25 +220,6 @@ async function buildPrintableHtml(settings) {
             }
         }
 
-        // ★追加：備考欄の高さチェックと自動圧縮（A3横サイズへの適合）
-        const notesContainer = document.getElementById('project-notes-editor-container');
-        if (notesContainer && settings.showNotes) {
-            const LIMIT_HEIGHT = 880; // A3横の安全な高さ（px）
-            const contentHeight = notesContainer.scrollHeight;
-            
-            // もし内容が制限を超えていたら、縮小して収める
-            if (contentHeight > LIMIT_HEIGHT) {
-                const scale = (LIMIT_HEIGHT / contentHeight).toFixed(3);
-                notesContainer.style.transform = `scale(${scale})`;
-                notesContainer.style.transformOrigin = 'top center';
-                // 縮小後の描画崩れを防ぐため、元のコンテナの高さは維持する
-                notesContainer.style.height = `${contentHeight}px`; 
-            } else {
-                notesContainer.style.transform = '';
-                notesContainer.style.height = '';
-            }
-        }
-
         const pageMainHtml = document.querySelector('.main-container').outerHTML;
         const pageBreak = isLastPage ? '' : 'page-break-after: always;';
 
@@ -360,7 +341,21 @@ async function buildPrintableHtml(settings) {
             color: #212529 !important;
             display: block !important;
         }
-        .notes-pane { display: ${settings.showNotes ? 'flex' : 'none'} !important; height: auto !important; }
+        .notes-pane {
+            display: ${settings.showNotes ? 'flex' : 'none'} !important;
+            flex-direction: column !important;
+            height: ${availSpace.toFixed(1)}px !important;
+            max-height: ${availSpace.toFixed(1)}px !important;
+            overflow: hidden !important;
+            width: 250px !important;
+            min-width: 250px !important;
+        }
+        #project-notes-editor-container {
+            overflow: hidden !important;
+        }
+        #project-notes-editor-container .ql-editor::after {
+            display: none !important;
+        }
         .print-hide { display: none !important; }
     `;
 
@@ -479,4 +474,64 @@ window.executePngSave = async function () {
     } finally {
         hidePdfLoading();
     }
+};
+
+// ---------------------------------------------------
+// 備考欄の印刷範囲境界線を更新
+// ---------------------------------------------------
+
+// アプリ起動時・リサイズ時の初期化
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        window.updatePrintBoundaryIndicator && window.updatePrintBoundaryIndicator();
+    }, 200);
+
+    // ウィンドウリサイズ時に再計算
+    window.addEventListener('resize', () => {
+        window.updatePrintBoundaryIndicator && window.updatePrintBoundaryIndicator();
+    });
+
+    // 印刷モーダルの設定変更時に再計算
+    const watchIds = ['modal-print-paper', 'modal-print-show-stamp'];
+    watchIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => {
+            window.updatePrintBoundaryIndicator && window.updatePrintBoundaryIndicator();
+        });
+    });
+});
+
+window.updatePrintBoundaryIndicator = function () {
+    // 印刷設定を読み取る（モーダルが未開封の場合はデフォルト値）
+    const paperSizeEl = document.getElementById('modal-print-paper');
+    const stampEl     = document.getElementById('modal-print-show-stamp');
+
+    const paperSize = paperSizeEl ? paperSizeEl.value : 'a3-landscape';
+    const showStamp = stampEl ? stampEl.checked : true;
+
+    // buildPrintableHtml() と同じ計算式
+    const MM_TO_PX = 96 / 25.4;
+    const isA3 = paperSize === 'a3-landscape';
+    const paperHeightMm     = isA3 ? 297 : 210;
+    const printableHeightPx = (paperHeightMm - 20) * MM_TO_PX;
+
+    const PROJ_HEADER_PX = 70;
+    const STAMP_PX       = showStamp ? 90 : 0;
+    const BUFFER_PX      = 20;
+    const availSpace     = printableHeightPx - PROJ_HEADER_PX - STAMP_PX - BUFFER_PX;
+
+    // ql-editor の notes-pane 上端からの実際のオフセットを測定
+    // （ノートヘッダー高さ＋コンテナパディング相当）
+    const qlEditor    = document.querySelector('#project-notes-editor-container .ql-editor');
+    const notesPaneEl = document.getElementById('notes-pane');
+    let editorOffset = 37; // フォールバック: notes-header(32) + container-padding(5)
+    if (qlEditor && notesPaneEl) {
+        const paneRect   = notesPaneEl.getBoundingClientRect();
+        const editorRect = qlEditor.getBoundingClientRect();
+        editorOffset = Math.max(0, editorRect.top - paneRect.top);
+    }
+
+    // ::after の top = ql-editor 内で印刷が切れる位置
+    const notesAvailH = Math.max(1, availSpace - editorOffset);
+    document.documentElement.style.setProperty('--notes-avail-h', notesAvailH + 'px');
 };

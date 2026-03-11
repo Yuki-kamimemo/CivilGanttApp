@@ -1039,8 +1039,6 @@
         box-shadow: -2px 0 5px rgba(0, 0, 0, 0.02);
         transition: width 0.2s ease, min-width 0.2s ease;
         z-index: 10;
-        /* A3横の高さ制限の基準（ヘッダー等を除いた安全圏） */
-        max-height: 880px; 
         overflow: hidden;
     }
 
@@ -1052,6 +1050,32 @@
     .notes-pane.collapsed .notes-title,
     .notes-pane.collapsed #project-notes {
         display: none;
+    }
+
+    /* 印刷範囲境界線インジケーター（Quillエディタ内の擬似要素） */
+    #project-notes-editor-container .ql-editor {
+        position: relative;
+    }
+
+    #project-notes-editor-container .ql-editor::after {
+        content: '— 印刷範囲ここまで —';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: var(--notes-avail-h, 9999px);
+        height: 20px;
+        border-top: 2px dashed #e74c3c;
+        color: #e74c3c;
+        font-size: 11px;
+        font-weight: bold;
+        font-style: normal;
+        text-align: center;
+        background: rgba(255, 243, 243, 0.9);
+        padding-top: 2px;
+        z-index: 100;
+        pointer-events: none;
+        user-select: none;
+        box-sizing: border-box;
     }
 
     .notes-header {

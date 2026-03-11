@@ -542,6 +542,11 @@ window.openPrintModal = function () {
     if (label) label.textContent = 'プレビュー更新を押してください';
 
     document.getElementById('print-modal').style.display = 'flex';
+
+    // 境界線を最新の設定で更新
+    if (typeof window.updatePrintBoundaryIndicator === 'function') {
+        window.updatePrintBoundaryIndicator();
+    }
 };
 
 window.closePrintModal = function () {
