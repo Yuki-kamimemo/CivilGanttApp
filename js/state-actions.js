@@ -107,6 +107,10 @@ function applyLoadedData(parsedData) {
         parsedData.tasks.forEach(t => {
             if (t.name !== undefined) { t.koshu = t.name; delete t.name; }
             if (t.shubetsu === undefined) t.shubetsu = ""; if (t.saibetsu === undefined) t.saibetsu = "";
+            // 旧形式（プレーンテキスト）をHTML形式に変換（HTMLタグを含まない場合のみ）
+            if (t.koshu && !/<[a-z][\s\S]*>/i.test(t.koshu)) t.koshu = `<p>${t.koshu}</p>`;
+            if (t.shubetsu && !/<[a-z][\s\S]*>/i.test(t.shubetsu)) t.shubetsu = `<p>${t.shubetsu}</p>`;
+            if (t.saibetsu && !/<[a-z][\s\S]*>/i.test(t.saibetsu)) t.saibetsu = `<p>${t.saibetsu}</p>`;
             if (t.mergeAboveKoshu === undefined) t.mergeAboveKoshu = false;
             if (t.mergeAboveShubetsu === undefined) t.mergeAboveShubetsu = false;
             if (t.periods) t.periods.forEach(p => {

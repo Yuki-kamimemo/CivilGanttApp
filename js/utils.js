@@ -182,4 +182,6 @@ window.toggleTableDetail = function() {
     btn.textContent = leftPane.classList.contains('collapsed-view') ? '▶' : '◀';
     btn.title = leftPane.classList.contains('collapsed-view') ? '詳細列を展開する' : '詳細列を折りたたむ';
     window.renderChart();
+    // CSSトランジション(0.2s)完了後に再描画して行高さのズレを解消
+    setTimeout(() => window.renderChart(), 250);
 };

@@ -203,9 +203,9 @@ def export_data_to_excel(data_str, file_path):
             end_row = current_row + row_span - 1
             
             ws.cell(row=current_row, column=1, value=task.get("no", "")).alignment = align_center
-            ws.cell(row=current_row, column=2, value=task.get("koshu", "")).alignment = align_center
-            ws.cell(row=current_row, column=3, value=task.get("shubetsu", "")).alignment = align_center
-            ws.cell(row=current_row, column=4, value=task.get("saibetsu", "")).alignment = align_center
+            ws.cell(row=current_row, column=2, value=strip_html_tags(task.get("koshu", ""))).alignment = align_center
+            ws.cell(row=current_row, column=3, value=strip_html_tags(task.get("shubetsu", ""))).alignment = align_center
+            ws.cell(row=current_row, column=4, value=strip_html_tags(task.get("saibetsu", ""))).alignment = align_center
             
             for c in range(1, 5):
                 for r in range(current_row, end_row + 1):

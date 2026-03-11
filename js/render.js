@@ -279,6 +279,13 @@ function renderCalendarHeader() {
 // ---------------------------------------------------
 // 【リファクタリング】 テーブル描画（画面左側）
 // ---------------------------------------------------
+
+// HTMLタグを除いたプレーンテキストを返す（バーラベル・コンテキストメニュー用）
+function stripHtml(html) {
+    if (!html) return '';
+    return html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+}
+
 function renderTable() {
     const tbody = document.getElementById('task-tbody');
     tbody.innerHTML = '';
@@ -304,8 +311,8 @@ function renderTable() {
         tr.dataset.taskId = task.id;
         // data属性にIDを保持してaddEventListenerで呼ぶ（工種名の特殊文字対策）
         tr.addEventListener('contextmenu', (e) => {
-            if (e.target.tagName === 'INPUT' && e.target.type !== 'color') return;
-            const title = `行アクション (No.${task.no} ${task.koshu || '名称未設定'})`;
+            if (e.target.closest('.task-cell-editor-container')) return;
+            const title = `行アクション (No.${task.no} ${stripHtml(task.koshu) || '名称未設定'})`;
             window.showContextMenu(e, title, 'task', { taskId: task.id });
         });
 
@@ -319,20 +326,14 @@ function renderTable() {
             </td>
         `;
 
-        // 書式スタイルの組み立て
-        const st = task.styles || {};
-        const createCss = (obj) => `color:${obj?.color || ''}; font-weight:${obj?.fontWeight || ''}; font-size:${obj?.fontSize ? obj.fontSize + 'px' : ''}; font-family:${obj?.fontFamily || ''}; background-color:${obj?.backgroundColor || ''}; text-align:${obj?.textAlign || ''};`;
-        const kCss = createCss(st.koshu);
-        const shCss = createCss(st.shubetsu);
-        const saCss = createCss(st.saibetsu);
-
         if (koshuRowspans[index] > 0) {
             html += `
             <td class="task-koshu-cell" rowspan="${koshuRowspans[index]}">
                 <div class="task-name-header">
-                    <input type="text" class="task-koshu" placeholder="工種" style="${kCss}"
-                           onfocus="window.selectInput('cell', '${task.id}', 'koshu')"
-                           onchange="window.handleTaskDetailChange('${task.id}', 'koshu', this.value)">
+                    <div class="task-cell-editor-container"
+                         data-task-id="${task.id}"
+                         data-field="koshu"
+                         data-placeholder="工種"></div>
                 </div>
             </td>`;
         }
@@ -340,18 +341,20 @@ function renderTable() {
         if (shubetsuRowspans[index] > 0) {
             html += `
             <td class="task-shubetsu-cell" rowspan="${shubetsuRowspans[index]}">
-                <input type="text" class="task-shubetsu" placeholder="種別" style="${shCss}"
-                       onfocus="window.selectInput('cell', '${task.id}', 'shubetsu')"
-                       onchange="window.handleTaskDetailChange('${task.id}', 'shubetsu', this.value)">
+                <div class="task-cell-editor-container"
+                     data-task-id="${task.id}"
+                     data-field="shubetsu"
+                     data-placeholder="種別"></div>
             </td>`;
         }
 
         html += `
             <td class="task-saibetsu-cell">
                 <div class="task-name-container">
-                    <input type="text" class="task-saibetsu" placeholder="細別・規格" style="${saCss}"
-                           onfocus="window.selectInput('cell', '${task.id}', 'saibetsu')"
-                           onchange="window.handleTaskDetailChange('${task.id}', 'saibetsu', this.value)">
+                    <div class="task-cell-editor-container"
+                         data-task-id="${task.id}"
+                         data-field="saibetsu"
+                         data-placeholder="細別・規格"></div>
                 </div>
             </td>
         `;
@@ -390,15 +393,36 @@ function renderTable() {
         });
 
         tr.innerHTML = html;
-        // input.value はDOM経由で設定（特殊文字・引用符を含む文字列でも正しく動作させるため）
-        // setAttribute も併用して outerHTML 取得時にも値が反映されるようにする（PDF出力対応）
-        const koshuInput = tr.querySelector('.task-koshu');
-        if (koshuInput) { koshuInput.value = task.koshu; koshuInput.setAttribute('value', task.koshu || ''); }
-        const shubetsuInput = tr.querySelector('.task-shubetsu');
-        if (shubetsuInput) { shubetsuInput.value = task.shubetsu; shubetsuInput.setAttribute('value', task.shubetsu || ''); }
-        const saibetsuInput = tr.querySelector('.task-saibetsu');
-        if (saibetsuInput) { saibetsuInput.value = task.saibetsu; saibetsuInput.setAttribute('value', task.saibetsu || ''); }
+        // divコンテナにHTMLを流し込みイベントリスナーを設定する
+        ['koshu', 'shubetsu', 'saibetsu'].forEach(field => {
+            const container = tr.querySelector(`.task-cell-editor-container[data-field="${field}"]`);
+            if (!container) return;
+            const htmlContent = task[field] || '';
+            container.innerHTML = htmlContent;
+            container.classList.toggle('empty-cell', !htmlContent);
+            setupCellEditorListener(container, task.id, field);
+        });
         tbody.appendChild(tr);
+    });
+}
+
+// 工種/種別/細別セルのQuillインライン編集イベントを設定（日報セルと同パターン）
+function setupCellEditorListener(container, taskId, field) {
+    container.addEventListener('mousedown', (e) => {
+        if (window.editorManager && window.editorManager.activeContainer === container) return;
+        e.stopPropagation();
+
+        if (window.editorManager) {
+            if (window.editorManager.activeContainer &&
+                window.editorManager.activeContainer !== window.editorManager.defaultContainer) {
+                window.editorManager.closeEditor();
+            }
+            window.editorManager.openEditor(container, (html) => {
+                const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
+                container.classList.toggle('empty-cell', !cleanHtml);
+                window.handleTaskDetailChange(taskId, field, cleanHtml);
+            });
+        }
     });
 }
 
@@ -537,7 +561,7 @@ function createChartRow(task, rowHeight, chartArea) {
         if (e.target.closest('.task-bar') || e.target.closest('path')) return;
         e.preventDefault();
         e.stopPropagation();
-        const title = `行アクション (No.${task.no} ${task.koshu || '名称未設定'})`;
+        const title = `行アクション (No.${task.no} ${stripHtml(task.koshu) || '名称未設定'})`;
         window.showContextMenu(e, title, 'task', { taskId: task.id });
     });
 
@@ -577,7 +601,7 @@ function createChartRow(task, rowHeight, chartArea) {
 
 // 1つのタスク（行）の中にあるすべてのバーを描く
 function drawBarsForTask(task, chartRow, rowHeight, currentYOffset, calculatedBars, dStart, dEnd) {
-    const displayName = [task.koshu, task.shubetsu, task.saibetsu].filter(Boolean).join(' ') || '名称未設定';
+    const displayName = [task.koshu, task.shubetsu, task.saibetsu].map(stripHtml).filter(Boolean).join(' ') || '名称未設定';
     const maxRow = task.periods.reduce((max, p) => Math.max(max, p.displayRow || 0), 0);
     const numRows = maxRow + 1;
     const totalBarHeight = (18 * numRows) + (10 * (numRows - 1));
