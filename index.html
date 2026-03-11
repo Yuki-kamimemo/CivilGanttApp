@@ -12,7 +12,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Civil Schedule Master</title>
     <link rel="stylesheet" href="style.css?v=3">
-    <link rel="stylesheet" href="js/lib/tabulator/tabulator.min.css">
     <link rel="stylesheet" href="js/lib/quill/quill.snow.css">
     <link rel="stylesheet" href="print.css" media="print">
     <link rel="icon" href="data:,">
@@ -152,7 +151,7 @@
                         <label class="pdf-settings-label">用紙サイズ
                             <select id="modal-print-paper" class="pdf-settings-input">
                                 <option value="a4-landscape">A4 横</option>
-                                <option value="a3-landscape">A3 横</option>
+                                <option value="a3-landscape" selected>A3 横</option>
                             </select>
                         </label>
                         <label class="pdf-settings-label">カレンダー幅
@@ -378,7 +377,6 @@
         <div class="color-swatches-grid" id="color-swatches-grid"></div>
     </div>
 
-    <script src="js/lib/tabulator/tabulator.min.js"></script>
     <script src="js/lib/quill/quill.min.js"></script>
 
     <script src="js/global-editor-manager.js"></script>

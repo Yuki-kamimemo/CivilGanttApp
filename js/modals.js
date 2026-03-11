@@ -533,7 +533,7 @@ window.openPrintModal = function () {
 
     // 用紙サイズ・オプションのデフォルト
     const paperSel = document.getElementById('modal-print-paper');
-    if (paperSel && !paperSel.value) paperSel.value = 'a4-landscape';
+    if (paperSel && !paperSel.value) paperSel.value = 'a3-landscape';
 
     // プレビューエリアをリセット
     const area = document.getElementById('pdf-preview-area');
