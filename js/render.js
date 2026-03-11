@@ -181,7 +181,7 @@ function renderDailyNotes() {
                 if (window.editorManager.activeContainer && window.editorManager.activeContainer !== window.editorManager.defaultContainer) {
                     window.editorManager.closeEditor();
                 }
-                
+
                 window.editorManager.openEditor(textarea, (html, delta) => {
                     const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
                     window.handleDailyNoteChange(dateStr, cleanHtml);
@@ -667,7 +667,7 @@ function drawTextBoxes(chartArea) {
     state.texts.forEach(txt => {
         // すでに編集中のコンテナがある場合、そのコンテナは再作成せずに維持したい
         const isEditingThis = window.editorManager && window.editorManager.activeContainer && window.editorManager.activeContainer.dataset.id === txt.id;
-        
+
         let div;
         if (isEditingThis) {
             div = window.editorManager.activeContainer;
@@ -687,16 +687,16 @@ function drawTextBoxes(chartArea) {
 
         // 基本的な配置スタイル（padding:0 は ql-editor のデフォルトを打ち消すため）
         div.style.position = 'absolute';
-        div.style.padding = '5px'; 
+        div.style.padding = '5px';
         div.style.left = txt.x + 'px'; div.style.top = txt.y + 'px';
         div.style.fontFamily = txt.fontFamily || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-        
+
         // 内部にリッチテキスト（HTML）がある場合は、コンテナ側でのfontSize指定を避ける
         // (Quill内部の span.ql-size-... 等に任せる)
         if (!txt.text || !txt.text.includes('<')) {
             div.style.fontSize = (txt.fontSize || 12) + 'px';
         }
-        
+
         div.style.color = txt.color || '#212529';
         div.style.backgroundColor = txt.backgroundColor || 'transparent';
         div.style.borderStyle = txt.borderStyle || 'solid';
@@ -711,7 +711,7 @@ function drawTextBoxes(chartArea) {
         div.style.overflow = 'hidden';
 
         const alignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
-        
+
         // 内部にリッチテキストがある場合は、Quillの <p class="ql-align-..."> に任せるため、
         // コンテナ側の flex 揃えは補助的なものに留める
         if (txt.text && txt.text.includes('ql-align-')) {
@@ -749,18 +749,18 @@ function drawTextBoxes(chartArea) {
         function startEditingTextBox(targetDiv, targetTxt) {
             if (!window.editorManager) return;
             const isVertical = targetDiv.style.writingMode === 'vertical-rl';
-            
+
             window.editorManager.openEditor(targetDiv, (html, delta, boxStyles) => {
                 const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
                 targetTxt.text = cleanHtml;
-                
+
                 if (boxStyles) {
                     targetTxt.borderStyle = boxStyles.borderStyle;
                     targetTxt.borderWidth = boxStyles.borderWidth;
                     targetTxt.borderColor = boxStyles.borderColor;
                     targetTxt.backgroundColor = boxStyles.backgroundColor;
                 }
-                
+
                 window.saveStateToHistory();
                 // 編集終了後の再描画。編集中（activeContainerがある間）は全体再描画を抑制するのが望ましい
                 window.renderChart();
@@ -780,7 +780,7 @@ function drawTextBoxes(chartArea) {
             // 他の要素の選択を解除
             document.querySelectorAll('.chart-text-box, .task-bar').forEach(el => el.classList.remove('selected'));
             div.classList.add('selected');
-            
+
             if (window.updateFormatToolbar) window.updateFormatToolbar();
 
             if (e.button === 0) {

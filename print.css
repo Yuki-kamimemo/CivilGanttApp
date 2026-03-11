@@ -249,7 +249,3 @@ th,
 .daily-tab-actions button {
     display: none;
 }
-
-#project-notes-editor-container .ql-editor::after {
-    display: none !important;
-}
