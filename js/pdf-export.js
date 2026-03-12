@@ -193,10 +193,39 @@ async function buildPrintableHtml(settings) {
         </div>`;
 
     // 7. ★ 各ページのHTMLを生成して縦に積み重ねる
+    // render.js の renderAll() が「CELL_WIDTH_DAY = 45 * state.zoomRatio」でセル幅をリセットするため、
+    // zoomRatio を調整することでカレンダー幅を制御する
+    const origZoomRatio = state.zoomRatio; // = settings.zoom
+    const BASE_CELL_WIDTH = state.viewScale === 'day' ? 45 : 100; // render.js の基本セル幅
+
     let allPagesHtml = '';
     for (let i = 0; i < pages.length; i++) {
         const pageInfo  = pages[i];
         const isLastPage = i === pages.length - 1;
+
+        // このページの実際のセル数（日数 or 月数）を計算
+        let actualCells;
+        if (state.viewScale === 'day') {
+            const startD = new Date(pageInfo.start);
+            const endD   = new Date(pageInfo.end);
+            actualCells  = Math.round((endD - startD) / 86400000) + 1;
+        } else {
+            const startD = new Date(pageInfo.start);
+            const endD   = new Date(pageInfo.end);
+            actualCells  = (endD.getFullYear() * 12 + endD.getMonth())
+                         - (startD.getFullYear() * 12 + startD.getMonth()) + 1;
+        }
+
+        // カレンダーが印刷可能幅より狭い場合は zoomRatio を上げて伸張する
+        // （renderAll が CELL_WIDTH = BASE * zoomRatio でセル幅を決定するため）
+        state.zoomRatio = origZoomRatio;
+        if (actualCells > 0 && rightPaneAvailPx > 0) {
+            const actualZoomedWidth = actualCells * rawCellWidth * ganttZoom;
+            if (actualZoomedWidth < rightPaneAvailPx) {
+                // 伸張後の zoomRatio: BASE * zoomRatio * ganttZoom * actualCells = rightPaneAvailPx
+                state.zoomRatio = rightPaneAvailPx / (actualCells * BASE_CELL_WIDTH * ganttZoom);
+            }
+        }
 
         state.displayStart = pageInfo.start;
         state.displayEnd   = pageInfo.end;
