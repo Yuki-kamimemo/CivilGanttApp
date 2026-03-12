@@ -268,8 +268,15 @@ async function buildPrintableHtml(settings) {
             }
         }
 
+        // ★スペーサーをPDFキャプチャから除外（水平スクロールバー高さ分の余白が混入するのを防ぐ）
+        const spacer = document.getElementById('left-hscroll-spacer');
+        if (spacer) spacer.style.display = 'none';
+
         const pageMainHtml = document.querySelector('.main-container').outerHTML;
         const pageBreak = isLastPage ? '' : 'page-break-after: always;';
+
+        // ★スペーサーを元に戻す
+        if (spacer) spacer.style.display = '';
 
         allPagesHtml += `
 <div style="padding:10px; ${pageBreak}">
@@ -320,20 +327,52 @@ async function buildPrintableHtml(settings) {
             height: auto !important;
             overflow: visible !important;
             width: max-content !important;
+            display: flex !important;
+            align-items: flex-start !important; /* 左ペインが右側に引っ張られて伸びるのを防ぐ */
             zoom: ${ganttZoom.toFixed(4)} !important;
         }
         .left-pane {
             overflow: visible !important;
             height: auto !important;
+            min-height: 0 !important;
+            flex: none !important;
+            resize: none !important; /* リサイズハンドルを消す */
+            border-bottom: 1px solid #dee2e6 !important; /* 下端の線を確実に描画 */
+        }
+        /* table-container の overflow:auto がPDF時に行ずれを起こすため無効化 */
+        .table-container, #left-container {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 0 !important;
+            flex: none !important; /* flexによる自動拡張を無効化 */
+        }
+        /* スクロールバー補正スペーサーをPDFから除外 */
+        #left-hscroll-spacer {
+            display: none !important;
+        }
+        /* テーブル行の高さがコンテンツによって伸びるのを防ぎ、同期を安定させる */
+        .task-row {
+            break-inside: avoid !important;
+        }
+        .task-row td {
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            line-height: 1.2 !important;
+        }
+        /* th の position:sticky がPDFレンダリング時にレイアウトズレを起こすため無効化 */
+        th {
+            position: static !important;
         }
         .right-pane {
             overflow: visible !important;
             height: auto !important;
+            min-height: 0 !important; /* 空白を詰めるために必須 */
             width: max-content !important;
         }
         #right-container {
             overflow: visible !important;
             height: auto !important;
+            min-height: 0 !important; /* 空白を詰めるために必須 */
             width: max-content !important;
         }
         #calendar-header {
@@ -343,6 +382,7 @@ async function buildPrintableHtml(settings) {
         #chart-area {
             overflow: visible !important;
             height: auto !important;
+            min-height: 0 !important; /* 空白を詰めるために必須 */
         }
         .daily-notes-wrapper {
             display: ${settings.showDaily ? 'flex' : 'none'} !important;

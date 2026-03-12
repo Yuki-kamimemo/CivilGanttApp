@@ -19,9 +19,6 @@ class GlobalEditorManager {
         this.defaultOnSave = null;
         
         this.globalToolbarContainer = document.getElementById('global-quill-toolbar-container');
-        if (this.globalToolbarContainer) {
-            this.globalToolbarContainer.style.display = 'block'; 
-        }
         
         this.singletonEditorWrap = document.createElement('div');
         this.singletonEditorWrap.id = 'singleton-quill-editor';

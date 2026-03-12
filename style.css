@@ -196,13 +196,53 @@
     
     #global-quill-toolbar-container {
         position: relative;
-        z-index: 25; /* ドロップダウンメニューが他の要素の下に隠れるのを防ぐ */
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        z-index: 25;
+        background: #f3f4f6;
+        border-bottom: 1px solid #ddd;
+        padding: 4px 10px;
+    }
+
+    .toolbar-actions-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 15px;
+        flex-wrap: wrap;
     }
     
     #global-quill-toolbar {
         border: none !important;
-        padding: 5px 20px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        min-width: 300px;
+    }
+
+    .global-actions {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .add-row-btn-alt {
+        background: #0d6efd;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        transition: background 0.2s;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .add-row-btn-alt:hover {
+        background: #0b5ed7;
+    }
+
+    .add-row-btn-alt:active {
+        transform: translateY(1px);
     }
 
     /* セルがインラインエディタ化したときのコンテナ枠線除去 */
@@ -860,6 +900,7 @@
         border-top: 1px solid #dee2e6;
         cursor: pointer;
         color: #495057;
+        flex: none; /* flexコンテナ内で伸縮しないように固定 */
     }
 
     .add-row-btn:hover {
@@ -1813,7 +1854,7 @@
 body.print-capture-mode { overflow: visible !important; }
 body.print-capture-mode .main-container { overflow: visible !important; width: max-content; height: auto !important; }
 body.print-capture-mode .gantt-wrapper { overflow: visible !important; }
-body.print-capture-mode .left-pane { overflow: hidden !important; box-shadow: none; }
+body.print-capture-mode .left-pane { overflow: visible !important; box-shadow: none; }
 body.print-capture-mode .right-pane { overflow: visible !important; flex: none; }
 body.print-capture-mode .calendar-header { position: static !important; }
 body.print-capture-mode .daily-notes-wrapper { overflow: visible !important; height: auto; }

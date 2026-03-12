@@ -28,6 +28,26 @@ document.addEventListener('DOMContentLoaded', () => {
     dailyNotesRight.addEventListener('scroll', () => syncScroll(dailyNotesRight, rightContainer, 'scrollLeft'));
     leftContainer.addEventListener('scroll', () => syncScroll(leftContainer, rightContainer, 'scrollTop'));
 
+    // ★右ペインの水平スクロールバー出現時、左ペインに同じ高さのスペーサーを追加（左右ずれ防止）
+    const syncHScrollbarPadding = () => {
+        const hScrollH = rightContainer.offsetHeight - rightContainer.clientHeight;
+        let spacer = document.getElementById('left-hscroll-spacer');
+        if (hScrollH > 1) {
+            if (!spacer) {
+                spacer = document.createElement('div');
+                spacer.id = 'left-hscroll-spacer';
+                leftContainer.appendChild(spacer);
+            }
+            spacer.style.height = hScrollH + 'px';
+        } else {
+            if (spacer) spacer.remove();
+        }
+    };
+    if (window.ResizeObserver) {
+        new ResizeObserver(syncHScrollbarPadding).observe(rightContainer);
+    }
+    window.addEventListener('resize', syncHScrollbarPadding);
+
     // レイアウト幅の同期
     const leftPane = document.getElementById('left-pane');
     const dailyNotesLeft = document.getElementById('daily-notes-left');

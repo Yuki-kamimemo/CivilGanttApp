@@ -292,10 +292,14 @@
     </div>
 
     <!-- グローバル Quill ツールバー（ドック式・常時表示） -->
-    <div id="global-quill-toolbar-container" class="print-hide"
-        style="display: none; background: #f3f4f6; border-bottom: 1px solid #ddd;">
-        <div id="global-quill-toolbar">
-            <!-- GlobalEditorManager によって標準ボタンが自動構築されます -->
+    <div id="global-quill-toolbar-container" class="print-hide">
+        <div class="toolbar-actions-wrapper">
+            <div class="global-actions">
+                <button class="add-row-btn-alt" onclick="window.handleAddTask()" title="新しい作業行を末尾に追加します">+ 新規作業を追加</button>
+            </div>
+            <div id="global-quill-toolbar">
+                <!-- GlobalEditorManager によって標準ボタンが自動構築されます -->
+            </div>
         </div>
     </div>
 
@@ -329,7 +333,6 @@
                             <tbody id="task-tbody">
                             </tbody>
                         </table>
-                        <button class="add-row-btn print-hide" onclick="window.handleAddTask()">+ 新規作業を追加</button>
                     </div>
                 </div>
 

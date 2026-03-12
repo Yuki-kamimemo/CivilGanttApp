@@ -574,7 +574,7 @@ function renderChart(skipScrollRestore = false) {
     state.tasks.forEach((task, index) => {
         const trDOM = tableRows[index];
         if (!trDOM) return;
-        const rowHeight = trDOM.offsetHeight;
+        const rowHeight = trDOM.getBoundingClientRect().height;
 
         // 行（背景）の作成
         const chartRow = createChartRow(task, rowHeight, chartArea);
@@ -592,16 +592,6 @@ function renderChart(skipScrollRestore = false) {
     // 5. 矢印の描画
     arrowLayer.style.height = currentYOffset + 'px';
     drawArrows(calculatedBars, arrowLayer);
-
-    // 6. 画面下部の余白追加
-    // ★修正: ボタンの正確な高さを取得し、枠線分の微調整（+1px）を加える
-    const addRowBtn = document.querySelector('.add-row-btn');
-    const btnHeight = addRowBtn ? addRowBtn.getBoundingClientRect().height : 34;
-
-    const bottomPadding = document.createElement('div');
-    bottomPadding.style.height = (btnHeight + 1) + 'px';
-    bottomPadding.style.width = '1px';
-    chartArea.appendChild(bottomPadding);
 
     // 7. テキストボックスの描画
     drawTextBoxes(chartArea);
