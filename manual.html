@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civil Schedule Master 操作マニュアル</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            border-left: 6px solid var(--accent-color);
+            padding-left: 15px;
+            margin-top: 40px;
+            background: #f9f9f9;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            border: none;
+            background: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+            font-size: 1.4em;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc ul ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-box {
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .important {
+            background-color: #fff3cd;
+            border-left: 5px solid #ffecb5;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .shortcut {
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .img-placeholder {
+            background: #eee;
+            border: 2px dashed #ccc;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Civil Schedule Master 操作マニュアル</h1>
+            <p>土木工程管理特化型ガントチャート作成システム</p>
+        </header>
+
+        <section class="toc">
+            <h2>目次</h2>
+            <ul>
+                <li><a href="#intro">1. はじめに</a></li>
+                <li><a href="#basic">2. 基本操作</a>
+                    <ul>
+                        <li><a href="#file-ops">2.1 ファイル操作</a></li>
+                        <li><a href="#project-info">2.2 工事情報の入力</a></li>
+                    </ul>
+                </li>
+                <li><a href="#gantt-edit">3. 工程表の編集</a>
+                    <ul>
+                        <li><a href="#add-row">3.1 作業行の追加・編集</a></li>
+                        <li><a href="#bar-creation">3.2 ガントバーの作成モード</a></li>
+                        <li><a href="#period-edit">3.3 期間と進捗の管理</a></li>
+                    </ul>
+                </li>
+                <li><a href="#display-settings">4. 表示設定とカレンダー</a>
+                    <ul>
+                        <li><a href="#view-range">4.1 表示範囲とスケール</a></li>
+                        <li><a href="#holiday">4.2 休日（非稼働日）の設定</a></li>
+                        <li><a href="#zoom">4.3 ズームとレイアウト</a></li>
+                    </ul>
+                </li>
+                <li><a href="#advanced">5. 備考欄と記録機能</a>
+                    <ul>
+                        <li><a href="#project-notes">5.1 プロジェクト全体備考</a></li>
+                        <li><a href="#daily-notes">5.2 日報・工事記録タブ</a></li>
+                    </ul>
+                </li>
+                <li><a href="#output">6. 出力・印刷</a>
+                    <ul>
+                        <li><a href="#excel-export">6.1 Excelエクスポート</a></li>
+                        <li><a href="#pdf-print">6.2 PDF出力・印刷</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="intro">
+            <h2>1. はじめに</h2>
+            <p>Civil Schedule Master は、土木現場の複雑な工程管理を直感的に、かつ美しく作成するために設計されたアプリケーションです。計画工程と実施（変更）工程の比較、休日設定の柔軟な管理、リッチテキストによる詳細な備考記録など、現場代理人のニーズに応える機能を備えています。</p>
+        </section>
+
+        <section id="basic">
+            <h2>2. 基本操作</h2>
+            
+            <h3 id="file-ops">2.1 ファイル操作</h3>
+            <p>画面上部のメニューバー「ファイル」から以下の操作が行えます。</p>
+            <ul>
+                <li><strong>新規作成</strong>: すべてのデータをクリアして新しい工程表を作成します。</li>
+                <li><strong>開く</strong>: 保存済みの <code>.csm</code> ファイルを読み込みます。</li>
+                <li><strong>上書き保存</strong> (<span class="shortcut">Ctrl + S</span>): 現在開いているファイルに保存します。</li>
+                <li><strong>名前を付けて保存</strong>: 新しいファイル名でデータを保存します。</li>
+            </ul>
+
+            <h3 id="project-info">2.2 工事情報の入力</h3>
+            <p>画面最上部のパネルで工事の基本情報を設定します。</p>
+            <ul>
+                <li><strong>工事名・事業者名</strong>: 印刷時のヘッダー情報として使用されます。</li>
+                <li><strong>全体工期</strong>: 工事の着手日と完了日を設定します。この期間に基づいてカレンダーの初期範囲が決定されます。</li>
+            </ul>
+        </section>
+
+        <section id="gantt-edit">
+            <h2>3. 工程表の編集</h2>
+
+            <h3 id="add-row">3.1 作業行の追加・編集</h3>
+            <p>左側のテーブルの下にある「+ 新規作業を追加」ボタンをクリックすると、新しい行が追加されます。各セルをダブルクリックすることで、工種、種別、細別などの情報を直接入力できます。</p>
+
+            <h3 id="bar-creation">3.2 ガントバーの作成モード</h3>
+            <p>ヘッダーの「バー作成モード」を切り替えることで、用途に応じたバーを描画できます。</p>
+            <table>
+                <tr>
+                    <th>モード</th>
+                    <th>説明</th>
+                </tr>
+                <tr>
+                    <td><strong>予定(青)</strong></td>
+                    <td>初期計画としてのバーを作成します（上段）。</td>
+                </tr>
+                <tr>
+                    <td><strong>段追加(赤)</strong></td>
+                    <td>現在の行に新しい変更段（下段）を追加し、そこにバーを作成します。</td>
+                </tr>
+                <tr>
+                    <td><strong>変更追加(赤)</strong></td>
+                    <td>既存の変更段（最新の段）に対して、さらに期間を追加します。</td>
+                </tr>
+            </table>
+            <p class="important"><strong>自動バー作成</strong> チェックボックスをオンにすると、カレンダーの空白部分をドラッグするだけで、現在のモードに応じたバーを素早く作成できます。</p>
+
+            <h3 id="period-edit">3.3 期間と進捗の管理</h3>
+            <p>作成されたガントバーをダブルクリックすると「期間の詳細編集」モーダルが開きます。ここでは以下の設定が可能です。</p>
+            <ul>
+                <li>開始日・終了日・日数の数値入力（自動連動します）</li>
+                <li>進捗率(%)の入力</li>
+                <li>バーの個別の色変更</li>
+            </ul>
+        </section>
+
+        <section id="display-settings">
+            <h2>4. 表示設定とカレンダー</h2>
+
+            <h3 id="view-range">4.1 表示範囲とスケール</h3>
+            <p>「表示範囲」セレクタを使用すると、1週間、1ヶ月、半年、1年などのプリセット範囲に素早く切り替えられます。また、「表示単位」を「日単位」または「月単位」に変更することで、長期工程の俯瞰も容易です。</p>
+
+            <h3 id="holiday">4.2 休日（非稼働日）の設定</h3>
+            <p>メニューの「設定」→「休日（非稼働日）設定」から、以下の設定が可能です。</p>
+            <ul>
+                <li>土日の自動非稼働設定</li>
+                <li>日本の祝日の自動反映</li>
+                <li>お盆や年末年始など、特定の日付を個別に追加</li>
+            </ul>
+            <p>非稼働日はカレンダー上でグレーアウトされ、日数の計算から除外されます（設定により異なります）。</p>
+
+            <h3 id="zoom">4.3 ズームとレイアウト</h3>
+            <p>「カレンダー幅」スライダーを動かすことで、1日あたりのピクセル幅を調整できます。詳細に予定を組む場合は広く、全体を見渡す場合は狭く調整してください。</p>
+        </section>
+
+        <section id="advanced">
+            <h2>5. 備考欄と記録機能</h2>
+
+            <h3 id="project-notes">5.1 プロジェクト全体備考</h3>
+            <p>画面右側の「備考欄」は、プロジェクト全体の注意事項や共通仕様を記録する場所です。Quillエディタを採用しており、太字、リスト、色付けなどの装飾が可能です。</p>
+
+            <h3 id="daily-notes">5.2 日報・工事記録タブ</h3>
+            <p>画面下部には、タブ形式で複数の記録シートを作成できるエリアがあります。日報として日付ごとの作業内容を記録したり、工種ごとの留意事項をまとめたりと、自由な使い方が可能です。タブの追加・削除・名前変更に対応しています。</p>
+        </section>
+
+        <section id="output">
+            <h2>6. 出力・印刷</h2>
+
+            <h3 id="excel-export">6.1 Excelエクスポート</h3>
+            <p>「ファイル」→「Excelへエクスポート」を選択すると、現在入力されているデータをExcel形式（.xlsx）で出力します。計算式やスタイルの大部分を維持したまま、社内報告用などに再加工することが可能です。</p>
+
+            <h3 id="pdf-print">6.2 PDF出力・印刷</h3>
+            <p>「ファイル」→「印刷 / PDF出力」を選択すると、高度なプレビュー画面が開きます。</p>
+            <ul>
+                <li><strong>用紙サイズ</strong>: A3横 / A4横を選択可能。</li>
+                <li><strong>出力オプション</strong>: 備考欄や日報エリアを含めるかどうかを選択できます。</li>
+                <li><strong>ハンコ枠</strong>: 承認印用の枠を表示し、役職名をカスタマイズできます。</li>
+            </ul>
+            <p class="important">PDF出力機能は、画面上のレイアウトを忠実に再現します。プレビューで崩れがないか確認してから「PDF保存」を実行してください。</p>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Civil Schedule Master - すべての土木技術者に、最高の工程管理体験を。</p>
+        </footer>
+    </div>
+</body>
+</html>
