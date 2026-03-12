@@ -360,6 +360,19 @@ window.deleteCurrentDailyTab = function () {
         window.saveStateToHistory(); renderAll();
     });
 };
+window.handleDailyNoteRangeMerge = function (startKey, colspan, rangeKeys) {
+    const tabId = state.activeDailyNoteTab;
+    if (!state.dailyNotesMerges[tabId]) state.dailyNotesMerges[tabId] = {};
+    const merges = state.dailyNotesMerges[tabId];
+
+    // 範囲内の既存マージをすべて削除してから新しいマージを設定
+    rangeKeys.forEach(k => { delete merges[k]; });
+    merges[startKey] = colspan;
+
+    window.saveStateToHistory();
+    renderAll();
+};
+
 window.handleDailyNoteMerge = function (action, startDateStr) {
     const tabId = state.activeDailyNoteTab;
     if (!state.dailyNotesMerges[tabId]) state.dailyNotesMerges[tabId] = {};

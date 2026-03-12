@@ -138,6 +138,24 @@ function renderDailyNotes() {
     const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
     const vAlignMap = { 'flex-start': 'flex-start', 'center': 'center', 'flex-end': 'flex-end' };
 
+    // ドラッグ選択ハイライトのヘルパー関数
+    const clearDragHighlight = () => {
+        grid.querySelectorAll('.daily-note-cell--selecting').forEach(c =>
+            c.classList.remove('daily-note-cell--selecting')
+        );
+    };
+
+    const updateDragHighlight = (startKey, endKey) => {
+        const startIdx = allCellKeys.findIndex(c => c.key === startKey);
+        const endIdx = allCellKeys.findIndex(c => c.key === endKey);
+        if (startIdx === -1 || endIdx === -1) return;
+        const [minIdx, maxIdx] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+        grid.querySelectorAll('.daily-note-cell').forEach(cell => {
+            const idx = allCellKeys.findIndex(c => c.key === cell.dataset.dateStr);
+            cell.classList.toggle('daily-note-cell--selecting', idx >= minIdx && idx <= maxIdx);
+        });
+    };
+
     const drawCell = (dateStr, dateObj, widthPx, isMerged = false) => {
         const cell = document.createElement('div');
         cell.className = 'daily-note-cell' + (isMerged ? ' daily-note-cell--merged' : '');
@@ -182,9 +200,9 @@ function renderDailyNotes() {
         // Quillエディタから保存されたHTMLをそのまま流し込む
         textarea.innerHTML = tabData[dateStr] || '';
 
-        // インライン編集のフック
+        // インライン編集 & ドラッグ選択のフック
         textarea.addEventListener('mousedown', (e) => {
-            // すでに自分が編集対象（アクティブ）なら、何もしないでブラウザの標準動作（選択など）に任せる
+            // すでに自分が編集対象（アクティブ）なら、何もしないでブラウザの標準動作（テキスト選択など）に任せる
             if (window.editorManager && window.editorManager.activeContainer === textarea) {
                 return;
             }
@@ -192,20 +210,67 @@ function renderDailyNotes() {
             // バブリングを止めて「画面外クリック判定（閉じる処理）」を阻止
             e.stopPropagation();
 
-            window.selectInput('daily_notes');
+            const startX = e.clientX;
+            let isDragging = false;
 
-            if (window.editorManager) {
-                const isVertical = currentWM === 'vertical-rl';
-                // 前のエディタが残っている可能性を考慮して一旦閉じる
-                if (window.editorManager.activeContainer && window.editorManager.activeContainer !== window.editorManager.defaultContainer) {
-                    window.editorManager.closeEditor();
+            const onMouseMove = (ev) => {
+                // 8px以上横移動したらドラッグ選択モードに切り替え
+                if (!isDragging && Math.abs(ev.clientX - startX) > 8) {
+                    isDragging = true;
+                    // エディタが開いていれば閉じる
+                    if (window.editorManager?.activeContainer && window.editorManager.activeContainer !== window.editorManager.defaultContainer) {
+                        window.editorManager.closeEditor();
+                    }
+                    updateDragHighlight(dateStr, dateStr);
                 }
+                if (isDragging) {
+                    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+                    const hoveredCell = el?.closest?.('.daily-note-cell');
+                    if (hoveredCell?.dataset.dateStr) {
+                        updateDragHighlight(dateStr, hoveredCell.dataset.dateStr);
+                    }
+                }
+            };
 
-                window.editorManager.openEditor(textarea, (html, delta) => {
-                    const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
-                    window.handleDailyNoteChange(dateStr, cleanHtml);
-                }, isVertical);
-            }
+            const onMouseUp = (ev) => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                if (isDragging) {
+                    // ドラッグ終了 → 範囲を結合
+                    clearDragHighlight();
+                    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+                    const endCell = el?.closest?.('.daily-note-cell');
+                    const endKey = endCell?.dataset.dateStr || dateStr;
+
+                    const startIdx = allCellKeys.findIndex(c => c.key === dateStr);
+                    const endIdx = allCellKeys.findIndex(c => c.key === endKey);
+                    const [minIdx, maxIdx] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+
+                    if (maxIdx > minIdx) {
+                        const minKey = allCellKeys[minIdx].key;
+                        const colspan = maxIdx - minIdx + 1;
+                        const rangeKeys = allCellKeys.slice(minIdx, maxIdx + 1).map(c => c.key);
+                        window.handleDailyNoteRangeMerge(minKey, colspan, rangeKeys);
+                    }
+                } else {
+                    // クリック（ドラッグなし）→ エディタを開く
+                    window.selectInput('daily_notes');
+                    if (window.editorManager) {
+                        const isVertical = currentWM === 'vertical-rl';
+                        if (window.editorManager.activeContainer && window.editorManager.activeContainer !== window.editorManager.defaultContainer) {
+                            window.editorManager.closeEditor();
+                        }
+                        window.editorManager.openEditor(textarea, (html, delta) => {
+                            const cleanHtml = (html === '<p><br></p>' || !html) ? '' : html;
+                            window.handleDailyNoteChange(dateStr, cleanHtml);
+                        }, isVertical);
+                    }
+                }
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
         });
 
         // 右クリックで結合メニューを表示

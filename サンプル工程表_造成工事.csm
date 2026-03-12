@@ -1,0 +1,631 @@
+{
+  "viewRange": "month",
+  "viewScale": "day",
+  "notes": "<p><strong>【特記事項】</strong></p><ul><li>4月10日は近隣住民への説明会のため、重機作業は午後からとする。</li><li>埋設物の確認を随時行うこと。</li><li>熱中症対策を徹底すること。</li></ul>",
+  "notesCollapsed": false,
+  "dailyNoteTabs": [
+    {
+      "id": "tab_general",
+      "name": "作業全般・天候"
+    },
+    {
+      "id": "tab_safety",
+      "name": "安全管理・行事"
+    }
+  ],
+  "activeDailyNoteTab": "tab_safety",
+  "dailyNotesData": {
+    "tab_general": {
+      "2026-04-01": "晴れ / 準備工開始",
+      "2026-04-05": "雨天のため作業中止",
+      "2026-04-10": "近隣説明会",
+      "2026-04-15": "晴れ / 盛土作業順調"
+    },
+    "tab_safety": {
+      "2026-04-01": "新規入場者教育",
+      "2026-04-07": "全体安全朝礼",
+      "2026-04-14": "重機接触防止訓練"
+    }
+  },
+  "dailyNotesMerges": {
+    "tab_general": {
+      "2026-04-01": 2,
+      "2026-04-10": 3
+    },
+    "tab_safety": {}
+  },
+  "holidays": {
+    "sundays": true,
+    "saturdays": true,
+    "nationalHolidays": true,
+    "custom": []
+  },
+  "autoCreateBar": true,
+  "texts": [],
+  "shapes": [],
+  "globalFontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+  "globalFontSize": 13,
+  "projectName": "○○地区宅地造成工事",
+  "companyName": "株式会社テスト建設",
+  "projectStart": "2026-04-01",
+  "projectEnd": "2026-04-30",
+  "displayStart": "2026-04-01",
+  "displayEnd": "2026-04-30",
+  "tasks": [
+    {
+      "id": "id_c5dc2e830419",
+      "no": 1,
+      "koshu": "<p>準備工</p>",
+      "shubetsu": "<p>仮設工</p>",
+      "saibetsu": "<p>仮囲い設置</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_1204f19a3207",
+          "dep": "",
+          "start": "2026-04-01",
+          "end": "2026-04-03",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_c0aabc77bd6b",
+      "no": 2,
+      "koshu": "<p>準備工</p>",
+      "shubetsu": "<p>仮設工</p>",
+      "saibetsu": "<p>仮設ハウス設置</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_a5aa8282540d",
+          "dep": "",
+          "start": "2026-04-03",
+          "end": "2026-04-05",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_f714f6033a83",
+          "dep": "",
+          "start": "2026-04-04",
+          "end": "2026-04-06",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_064b538c335f",
+      "no": 3,
+      "koshu": "<p>準備工</p>",
+      "shubetsu": "<p>測量・丁張</p>",
+      "saibetsu": "<p>起工測量</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_a026fc4ee836",
+          "dep": "id_1204f19a3207",
+          "start": "2026-04-01",
+          "end": "2026-04-02",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_adf225307e62",
+      "no": 4,
+      "koshu": "<p>土工</p>",
+      "shubetsu": "<p>伐開・除根</p>",
+      "saibetsu": "<p>伐開工</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_2a625bfb3aa1",
+          "dep": "id_a026fc4ee836",
+          "start": "2026-04-04",
+          "end": "2026-04-06",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_6435e76646be",
+          "dep": "",
+          "start": "2026-04-06",
+          "end": "2026-04-08",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_a35477c83e1f",
+      "no": 5,
+      "koshu": "<p>土工</p>",
+      "shubetsu": "<p>伐開・除根</p>",
+      "saibetsu": "<p>除根工</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_a45c025c55d8",
+          "dep": "id_2a625bfb3aa1",
+          "start": "2026-04-06",
+          "end": "2026-04-08",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_c97efec91401",
+          "dep": "",
+          "start": "2026-04-08",
+          "end": "2026-04-10",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_1dff82a63367",
+      "no": 6,
+      "koshu": "<p>土工</p>",
+      "shubetsu": "<p>掘削工</p>",
+      "saibetsu": "<p>表土剥ぎ</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_2a5a90faef34",
+          "dep": "id_a45c025c55d8",
+          "start": "2026-04-08",
+          "end": "2026-04-10",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_d2e3032c98d5",
+          "dep": "",
+          "start": "2026-04-10",
+          "end": "2026-04-12",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_8151ba8e6034",
+      "no": 7,
+      "koshu": "<p>土工</p>",
+      "shubetsu": "<p>掘削工</p>",
+      "saibetsu": "<p>土砂掘削</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_662e397f1e7b",
+          "dep": "id_2a5a90faef34",
+          "start": "2026-04-10",
+          "end": "2026-04-15",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_974ecd858026",
+          "dep": "",
+          "start": "2026-04-12",
+          "end": "2026-04-18",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_f35c38be42c1",
+      "no": 8,
+      "koshu": "<p>土工</p>",
+      "shubetsu": "<p>盛土工</p>",
+      "saibetsu": "<p>路床盛土</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_cb6b4fcfddb3",
+          "dep": "id_662e397f1e7b",
+          "start": "2026-04-15",
+          "end": "2026-04-20",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_1f5e2606b96a",
+          "dep": "",
+          "start": "2026-04-18",
+          "end": "2026-04-22",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_d9c3fdb3c1b5",
+      "no": 9,
+      "koshu": "<p>土工</p>",
+      "shubetsu": "<p>盛土工</p>",
+      "saibetsu": "<p>法面整形</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_73e0b4a50e91",
+          "dep": "id_cb6b4fcfddb3",
+          "start": "2026-04-18",
+          "end": "2026-04-22",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_00d31e17010b",
+      "no": 10,
+      "koshu": "<p>擁壁工</p>",
+      "shubetsu": "<p>L型擁壁</p>",
+      "saibetsu": "<p>床掘り</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_ccfd3562be21",
+          "dep": "id_2a5a90faef34",
+          "start": "2026-04-10",
+          "end": "2026-04-12",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_6837e53e3c9b",
+          "dep": "",
+          "start": "2026-04-10",
+          "end": "2026-04-13",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_56195ea3970a",
+      "no": 11,
+      "koshu": "<p>擁壁工</p>",
+      "shubetsu": "<p>L型擁壁</p>",
+      "saibetsu": "<p>基礎砕石</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_38bb5acbff09",
+          "dep": "id_ccfd3562be21",
+          "start": "2026-04-13",
+          "end": "2026-04-14",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_f6d5dfbc890d",
+          "dep": "",
+          "start": "2026-04-14",
+          "end": "2026-04-15",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_5c2b84dc6c8f",
+      "no": 12,
+      "koshu": "<p>擁壁工</p>",
+      "shubetsu": "<p>L型擁壁</p>",
+      "saibetsu": "<p>均しコンクリート</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_966d094ab8ad",
+          "dep": "id_38bb5acbff09",
+          "start": "2026-04-14",
+          "end": "2026-04-15",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_dbbc53781300",
+          "dep": "",
+          "start": "2026-04-15",
+          "end": "2026-04-16",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_162d3768e63b",
+      "no": 13,
+      "koshu": "<p>擁壁工</p>",
+      "shubetsu": "<p>L型擁壁</p>",
+      "saibetsu": "<p>擁壁据付</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_4c6703cf3d00",
+          "dep": "id_966d094ab8ad",
+          "start": "2026-04-16",
+          "end": "2026-04-20",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_d6a50ed5b7a2",
+          "dep": "",
+          "start": "2026-04-17",
+          "end": "2026-04-22",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_157283a836ab",
+      "no": 14,
+      "koshu": "<p>排水工</p>",
+      "shubetsu": "<p>U型側溝</p>",
+      "saibetsu": "<p>床掘り</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_163f86637285",
+          "dep": "id_4c6703cf3d00",
+          "start": "2026-04-18",
+          "end": "2026-04-20",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_45bcf4aea991",
+      "no": 15,
+      "koshu": "<p>排水工</p>",
+      "shubetsu": "<p>U型側溝</p>",
+      "saibetsu": "<p>基礎砕石</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_f40613f2a8fa",
+          "dep": "id_163f86637285",
+          "start": "2026-04-20",
+          "end": "2026-04-21",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_8646357b2263",
+      "no": 16,
+      "koshu": "<p>排水工</p>",
+      "shubetsu": "<p>U型側溝</p>",
+      "saibetsu": "<p>側溝布設</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_37069c28de1d",
+          "dep": "id_f40613f2a8fa",
+          "start": "2026-04-21",
+          "end": "2026-04-25",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_4d006120bd70",
+          "dep": "",
+          "start": "2026-04-22",
+          "end": "2026-04-26",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_1a3a83121d81",
+      "no": 17,
+      "koshu": "<p>舗装工</p>",
+      "shubetsu": "<p>路盤工</p>",
+      "saibetsu": "<p>下層路盤</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_226b657e2cd4",
+          "dep": "id_73e0b4a50e91, id_37069c28de1d",
+          "start": "2026-04-23",
+          "end": "2026-04-25",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_14a1045b7ac2",
+      "no": 18,
+      "koshu": "<p>舗装工</p>",
+      "shubetsu": "<p>路盤工</p>",
+      "saibetsu": "<p>上層路盤</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": true,
+      "periods": [
+        {
+          "pid": "id_11682143d562",
+          "dep": "id_226b657e2cd4",
+          "start": "2026-04-25",
+          "end": "2026-04-26",
+          "progress": 100,
+          "color": "#3b82f6",
+          "displayRow": 0
+        }
+      ]
+    },
+    {
+      "id": "id_1300e9aeef5c",
+      "no": 19,
+      "koshu": "<p>舗装工</p>",
+      "shubetsu": "<p>表層工</p>",
+      "saibetsu": "<p>アスファルト舗装</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": true,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_e28813dd235c",
+          "dep": "id_11682143d562",
+          "start": "2026-04-27",
+          "end": "2026-04-28",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_adbc7559e9f6",
+          "dep": "",
+          "start": "2026-04-28",
+          "end": "2026-04-29",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    },
+    {
+      "id": "id_05c2a11d0d33",
+      "no": 20,
+      "koshu": "<p>片付工</p>",
+      "shubetsu": "<p>片付・清掃</p>",
+      "saibetsu": "<p>全体清掃</p>",
+      "collapsed": false,
+      "mergeAboveKoshu": false,
+      "mergeAboveShubetsu": false,
+      "periods": [
+        {
+          "pid": "id_dd2eacea1fab",
+          "dep": "id_e28813dd235c",
+          "start": "2026-04-29",
+          "end": "2026-04-30",
+          "progress": 50,
+          "color": "#3b82f6",
+          "displayRow": 0
+        },
+        {
+          "pid": "id_6f9f37887583",
+          "dep": "",
+          "start": "2026-04-30",
+          "end": "2026-04-30",
+          "progress": 30,
+          "color": "#dc3545",
+          "displayRow": 1
+        }
+      ]
+    }
+  ],
+  "zoomRatio": 1,
+  "notesDelta": {
+    "ops": [
+      {
+        "attributes": {
+          "bold": true
+        },
+        "insert": "【特記事項】"
+      },
+      {
+        "insert": "\n4月10日は近隣住民への説明会のため、重機作業は午後からとする。"
+      },
+      {
+        "attributes": {
+          "list": "bullet"
+        },
+        "insert": "\n"
+      },
+      {
+        "insert": "埋設物の確認を随時行うこと。"
+      },
+      {
+        "attributes": {
+          "list": "bullet"
+        },
+        "insert": "\n"
+      },
+      {
+        "insert": "熱中症対策を徹底すること。"
+      },
+      {
+        "attributes": {
+          "list": "bullet"
+        },
+        "insert": "\n"
+      }
+    ]
+  }
+}
