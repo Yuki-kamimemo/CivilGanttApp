@@ -23,6 +23,22 @@
 - License: BSD-3-Clause
 - Copyright (c) 1992-2024, ReportLab Inc.
 
+### Pillow
+- License: HPND License
+- Copyright (c) 1997-2011 by Secret Labs AB, Copyright (c) 1995-2011 by Fredrik Lundh
+
+### beautifulsoup4
+- License: MIT License
+- Copyright (c) 2004-2023 Leonard Richardson
+
+### lxml
+- License: BSD-3-Clause
+- Copyright (c) 2004 Infrae. All rights reserved.
+
+### requests
+- License: Apache License 2.0
+- Copyright (c) 2012 Kenneth Reitz
+
 ---
 
 ## 2. JavaScript Libraries
@@ -31,14 +47,6 @@
 - License: BSD-3-Clause
 - Copyright (c) 2014, Jason Chen
 - Copyright (c) 2013, salesforce.com
-
-### jsPDF
-- License: MIT
-- Copyright (c) 2010-2021 James Hall, https://github.com/MrRio/jsPDF
-
-### html2canvas
-- License: MIT
-- Copyright (c) 2012 Niklas von Hertzen
 
 ---
 
