@@ -163,6 +163,9 @@ let stateHistory = [];
 let historyIndex = -1;
 const MAX_HISTORY = 50;
 
+// 未保存変更フラグ（ファイル保存後にfalse、変更時にtrueになる）
+window.isDirty = false;
+
 window.saveStateToHistory = function () {
     if (historyIndex < stateHistory.length - 1) {
         stateHistory = stateHistory.slice(0, historyIndex + 1);
@@ -174,6 +177,13 @@ window.saveStateToHistory = function () {
         historyIndex = stateHistory.length - 1;
     } else {
         historyIndex++;
+    }
+    // clean→dirty への初回遷移時のみPython側に通知する（毎回呼ぶとオーバーヘッドになるため）
+    if (!window.isDirty) {
+        window.isDirty = true;
+        if (window.pywebview && window.pywebview.api) {
+            window.pywebview.api.notify_change();
+        }
     }
     updateUndoRedoUI();
 }

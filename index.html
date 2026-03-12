@@ -30,7 +30,7 @@
                 <div onclick="window.handleExportExcel()">Excelへエクスポート...</div>
 
                 <div class="menu-separator"></div>
-                <div onclick="window.openPrintModal()">印刷 / PDF出力...</div>
+                <div onclick="window.openPrintModal()">PDF出力</div>
             </div>
         </div>
         <div class="menu-item">編集
@@ -130,7 +130,7 @@
         <div class="pdf-modal-content">
             <!-- ヘッダー -->
             <div class="pdf-modal-header">
-                <h3>PDF出力 / 印刷...</h3>
+                <h3>PDF出力</h3>
                 <button type="button" class="pdf-modal-close-btn" onclick="window.closePrintModal()">✕</button>
             </div>
             <!-- ボディ -->
@@ -349,12 +349,22 @@
                             <div class="tab-panel-content">
                                 <span id="current-daily-tab-name" class="tab-panel-name"></span>
                                 <div class="tab-panel-buttons print-hide">
-                                    <button onclick="window.editCurrentDailyTab()" class="tab-action-btn" title="タブの名前を変更">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    <button onclick="window.editCurrentDailyTab()" class="tab-action-btn"
+                                        title="タブの名前を変更">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor"
+                                            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                        </svg>
                                         名前変更
                                     </button>
-                                    <button onclick="window.deleteCurrentDailyTab()" class="tab-action-btn tab-action-danger" title="このタブを削除">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    <button onclick="window.deleteCurrentDailyTab()"
+                                        class="tab-action-btn tab-action-danger" title="このタブを削除">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor"
+                                            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
                                         削除
                                     </button>
                                 </div>

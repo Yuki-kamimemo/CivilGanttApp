@@ -11,25 +11,31 @@ import json
 class Api:
     def __init__(self):
         self._window = None
-        self._current_file_path = None 
+        self._current_file_path = None
         self._initial_file_content = None # ★追加: 起動時に読み込むデータ
-        
+        self._is_dirty = False            # 未保存変更フラグ（Python側で管理）
+
     # ★追加: JavaScriptから初期データを受け取るための関数
     def get_initial_data(self):
         return self._initial_file_content
 
+    # JSから変更を通知される（clean→dirty に切り替わる瞬間のみ呼ばれる）
+    def notify_change(self):
+        self._is_dirty = True
+        return True
+
     def save_file(self, data_str, default_filename):
         if not self._window:
             return False
-        
+
         file_types = ('Civil Schedule Master Files (*.csm)', 'All files (*.*)')
         result = self._window.create_file_dialog(
-            webview.FileDialog.SAVE, 
-            directory='', 
-            save_filename=default_filename, 
+            webview.FileDialog.SAVE,
+            directory='',
+            save_filename=default_filename,
             file_types=file_types
         )
-        
+
         if result:
             if isinstance(result, str):
                 result = (result,)
@@ -39,6 +45,7 @@ class Api:
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(data_str)
                     self._current_file_path = file_path
+                    self._is_dirty = False  # 保存成功でクリーン状態に
                     return True
                 except Exception as e:
                     print(f"ファイルの保存に失敗しました: {e}")
@@ -51,14 +58,14 @@ class Api:
     def open_file(self):
         if not self._window:
             return None
-        
+
         file_types = ('Civil Schedule Master Files (*.csm)', 'All files (*.*)')
         result = self._window.create_file_dialog(
-            webview.FileDialog.OPEN, 
-            allow_multiple=False, 
+            webview.FileDialog.OPEN,
+            allow_multiple=False,
             file_types=file_types
         )
-        
+
         if result:
             if isinstance(result, str):
                 result = (result,)
@@ -68,6 +75,7 @@ class Api:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         file_content = f.read()
                     self._current_file_path = file_path
+                    self._is_dirty = False  # ファイル読み込み後はクリーン状態に
                     return file_content
                 except Exception as e:
                     print(f"ファイルの読み込みに失敗しました: {e}")
@@ -79,11 +87,12 @@ class Api:
 
     def overwrite_file(self, data_str):
         if not self._current_file_path:
-            return False 
-            
+            return False
+
         try:
             with open(self._current_file_path, 'w', encoding='utf-8') as f:
                 f.write(data_str)
+            self._is_dirty = False  # 上書き保存成功でクリーン状態に
             return True
         except Exception as e:
             print(f"上書き保存に失敗しました: {e}")
@@ -94,6 +103,7 @@ class Api:
 
     def clear_file_path(self):
         self._current_file_path = None
+        self._is_dirty = False  # 新規作成はクリーン状態に
         return True
 
     def generate_pdf_from_html(self, html_content, settings, file_path):
@@ -292,14 +302,35 @@ def start_app():
     html_path = get_resource_path('index.html')
 
     window = webview.create_window(
-        'Civil Schedule Master', 
-        url=html_path, 
-        width=1200, 
+        'Civil Schedule Master',
+        url=html_path,
+        width=1200,
         height=800,
         min_size=(1000, 700),
         js_api=api
     )
-    api._window = window 
+    api._window = window
+
+    def on_closing():
+        # evaluate_js はこのスレッドから呼ぶとデッドロックするため
+        # Python側の _is_dirty フラグを直接参照する
+        if api._is_dirty:
+            import ctypes
+            MB_YESNO       = 0x00000004
+            MB_ICONWARNING = 0x00000030
+            MB_TOPMOST     = 0x00040000
+            IDYES = 6
+            user32 = ctypes.WinDLL('user32', use_last_error=True)  # type: ignore[attr-defined]
+            result = user32.MessageBoxW(
+                0,
+                '保存されていない変更があります。\n終了してもよろしいですか？',
+                '終了の確認',
+                MB_YESNO | MB_ICONWARNING | MB_TOPMOST
+            )
+            return result == IDYES
+        return True
+
+    window.events.closing += on_closing
     webview.start(debug=False)
 
 if __name__ == '__main__':

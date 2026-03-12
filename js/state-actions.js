@@ -10,6 +10,7 @@ window.handleNewFile = function () {
         state = window.createDefaultState();
         stateHistory = []; historyIndex = -1;
         window.saveStateToHistory(); renderAll();
+        window.isDirty = false;
     });
 };
 
@@ -20,6 +21,7 @@ window.handleOverwriteSave = async function () {
         if (success) {
             // alert() は処理をブロックするためトースト通知に変更
             showToastNotification('上書き保存しました！');
+            window.isDirty = false;
         } else {
             window.handleSaveFile();
         }
@@ -33,7 +35,8 @@ window.handleSaveFile = async function () {
     const fileName = state.projectName ? `${state.projectName}_工程表.csm` : '工程表.csm';
 
     if (window.pywebview && window.pywebview.api) {
-        await window.pywebview.api.save_file(dataStr, fileName);
+        const success = await window.pywebview.api.save_file(dataStr, fileName);
+        if (success) window.isDirty = false;
     } else {
         const blob = new Blob([dataStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -41,6 +44,7 @@ window.handleSaveFile = async function () {
         a.href = url; a.download = fileName;
         document.body.appendChild(a); a.click();
         document.body.removeChild(a); URL.revokeObjectURL(url);
+        window.isDirty = false;
     }
 };
 
@@ -141,6 +145,7 @@ function applyLoadedData(parsedData) {
         });
 
         window.saveStateToHistory(); renderAll();
+        window.isDirty = false;
     } else {
         alert('無効なファイルです。');
     }

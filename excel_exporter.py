@@ -29,50 +29,6 @@ def export_data_to_excel(data_str, file_path):
     wb = openpyxl.Workbook()
     wb.remove(wb.active) # デフォルトの空シートを削除
     
-    # --- 依存関係（矢印）とクリティカルパスの計算 ---
-    periods_dict = {}
-    for task in state.get("tasks", []):
-        for p in task.get("periods", []):
-            if p.get("pid"):
-                periods_dict[p["pid"]] = p
-
-    all_edges = []
-    adj = {pid: [] for pid in periods_dict}
-    preds = {pid: [] for pid in periods_dict}
-
-    # 全ての矢印の繋がりをリストアップ
-    for pid, p in periods_dict.items():
-        raw_dep = p.get("dep", "")
-        raw_dep_str = str(raw_dep) if raw_dep is not None else ""
-        deps = [d.strip() for d in raw_dep_str.split(",") if d.strip()]
-        for d in deps:
-            if d in periods_dict:
-                all_edges.append((d, pid))
-                adj[d].append(pid)
-                preds[pid].append(d)
-
-    critical_edges = set()
-    connected_pids = [pid for pid in periods_dict if adj[pid] or preds[pid]]
-    
-    if connected_pids:
-        # 繋がりがあるタスクの中で、一番遅い終了日を探す
-        end_dates = [periods_dict[pid].get("end") for pid in connected_pids if periods_dict[pid].get("end")]
-        if end_dates:
-            max_end = max(end_dates)
-            # その日付で終わるタスク（経路のゴール）を特定
-            terminals = [pid for pid in connected_pids if periods_dict[pid].get("end") == max_end]
-            
-            queue = list(terminals)
-            visited = set(terminals)
-            # ゴールから遡ってクリティカルパスの経路を特定する
-            while queue:
-                curr = queue.pop(0)
-                for p in preds[curr]:
-                    critical_edges.add((p, curr))
-                    if p not in visited:
-                        visited.add(p)
-                        queue.append(p)
-
     daily_tabs = state.get("dailyNoteTabs", [])
     if not daily_tabs:
         daily_tabs = [{"id": "tab_general", "name": "工程表"}]
@@ -89,31 +45,50 @@ def export_data_to_excel(data_str, file_path):
         ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
         ws.page_setup.fitToPage = True
         ws.page_setup.fitToWidth = 1
-        ws.page_setup.fitToHeight = 1
-        ws.page_margins.left = 0.25
-        ws.page_margins.right = 0.25
+        ws.page_setup.fitToHeight = 0 # 縦方向は自動（収まらない場合は次ページへ）
+        
+        # 余白設定 (単位はインチ: 1mm ≒ 0.039インチ)
+        ws.page_margins.left = 0.4
+        ws.page_margins.right = 0.4
         ws.page_margins.top = 0.5
         ws.page_margins.bottom = 0.5
         ws.print_options.horizontalCentered = True
         
-        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        # 改ページプレビューモードにする
+        ws.sheet_view.view = 'pageBreakPreview'
+        
+        thin_border = Border(left=Side(style='thin', color='DEE2E6'), right=Side(style='thin', color='DEE2E6'), top=Side(style='thin', color='DEE2E6'), bottom=Side(style='thin', color='DEE2E6'))
+        header_fill = PatternFill(start_color='E9ECEF', end_color='E9ECEF', fill_type='solid')
         align_center = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        align_left_top = Alignment(horizontal='left', vertical='top', wrap_text=True)
+        
+        # アプリに近いフォント設定
+        font_main = Font(name='Meiryo', size=9)
+        font_header = Font(name='Meiryo', size=10, bold=True)
+        font_title = Font(name='Meiryo', size=18, bold=True)
         
         project_name = state.get("projectName", "")
         company_name = state.get("companyName", "")
         p_start = state.get("projectStart", "")
         p_end = state.get("projectEnd", "")
         
-        ws.cell(row=1, column=1, value="工 程 表").font = Font(size=18, bold=True)
-        ws.cell(row=2, column=1, value=f"工事名: {project_name}")
-        ws.cell(row=2, column=3, value=f"事業者名: {company_name}")
-        ws.cell(row=2, column=5, value=f"全体工期: {p_start} ～ {p_end}")
-        ws.cell(row=3, column=5, value="■ 太い赤線の矢印はクリティカルパス").font = Font(color="DC3545", bold=True)
-
-        ws.column_dimensions['A'].width = 5   
-        ws.column_dimensions['B'].width = 15  
-        ws.column_dimensions['C'].width = 15  
-        ws.column_dimensions['D'].width = 20  
+        # タイトルと工事情報
+        ws.row_dimensions[1].height = 37.5 # 50px (1px ≒ 0.75pt)
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=10)
+        title_cell = ws.cell(row=1, column=1, value="工 程 表")
+        title_cell.font = font_title
+        title_cell.alignment = Alignment(horizontal='left', vertical='center')
+        
+        ws.row_dimensions[2].height = 20
+        ws.cell(row=2, column=1, value=f"工事名: {project_name}").font = font_header
+        ws.cell(row=2, column=5, value=f"事業者名: {company_name}").font = font_header
+        # 全体工期をR2 (18列目) に配置
+        ws.cell(row=2, column=18, value=f"全体工期: {p_start} ～ {p_end}").font = font_header
+        
+        ws.column_dimensions['A'].width = 4   # No.
+        ws.column_dimensions['B'].width = 18  # 工種
+        ws.column_dimensions['C'].width = 18  # 種別
+        ws.column_dimensions['D'].width = 22  # 細別・規格
         
         start_date_str = state.get("displayStart") or p_start
         end_date_str = state.get("displayEnd") or p_end
@@ -128,6 +103,8 @@ def export_data_to_excel(data_str, file_path):
         headers = ["No.", "工種", "種別", "細別・規格"]
         for col, text in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col, value=text)
+            cell.font = font_header
+            cell.fill = header_fill
             cell.alignment = align_center
             ws.cell(row=4, column=col).border = thin_border
             ws.cell(row=5, column=col).border = thin_border
@@ -136,11 +113,14 @@ def export_data_to_excel(data_str, file_path):
         cal_start_col = 5
         notes_col = cal_start_col + total_days 
         
+        # カレンダー列の幅を4ポイントに設定
         for i in range(total_days):
-            ws.column_dimensions[get_column_letter(cal_start_col + i)].width = 3
+            ws.column_dimensions[get_column_letter(cal_start_col + i)].width = 4
             
-        ws.column_dimensions[get_column_letter(notes_col)].width = 35
+        ws.column_dimensions[get_column_letter(notes_col)].width = 30
         notes_header = ws.cell(row=4, column=notes_col, value="備考欄")
+        notes_header.font = font_header
+        notes_header.fill = header_fill
         notes_header.alignment = align_center
         ws.cell(row=4, column=notes_col).border = thin_border
         ws.cell(row=5, column=notes_col).border = thin_border
@@ -148,17 +128,23 @@ def export_data_to_excel(data_str, file_path):
             
         current_month = -1
         month_start_col = cal_start_col
-        holiday_fill = PatternFill(start_color='E9ECEF', end_color='E9ECEF', fill_type='solid')
-        national_holiday_fill = PatternFill(start_color='F8D7DA', end_color='F8D7DA', fill_type='solid')
+        
+        # 色定義（アプリのCSSに準拠）
+        fill_holiday = PatternFill(start_color='E9ECEF', end_color='E9ECEF', fill_type='solid') # 平日以外の非稼働
+        fill_national = PatternFill(start_color='F8D7DA', end_color='F8D7DA', fill_type='solid') # 祝日
+        fill_sat = PatternFill(start_color='F0F8FF', end_color='F0F8FF', fill_type='solid') # 土曜
+        fill_sun = PatternFill(start_color='FFF5F5', end_color='FFF5F5', fill_type='solid') # 日曜
+        
         holidays_settings = state.get("holidays", {})
         custom_holidays = holidays_settings.get("custom", [])
 
-        def is_holiday(dt):
+        def get_holiday_type(dt):
             date_str = dt.strftime("%Y-%m-%d")
             if holidays_settings.get("nationalHolidays") and date_str in national_holidays: return "national"
-            if holidays_settings.get("sundays") and dt.weekday() == 6: return "holiday"
-            if holidays_settings.get("saturdays") and dt.weekday() == 5: return "holiday"
+            if dt.weekday() == 6: return "sun" # 日曜
+            if dt.weekday() == 5: return "sat" # 土曜
             if date_str in custom_holidays: return "holiday"
+            # 土日が非稼働設定でない場合でも、曜日としての色はつけたい
             return None
 
         holiday_cols = {}
@@ -167,6 +153,7 @@ def export_data_to_excel(data_str, file_path):
             cell_d = ws.cell(row=5, column=c_col, value=dt.day)
             cell_d.alignment = align_center
             cell_d.border = thin_border
+            cell_d.font = font_main
             
             if dt.month != current_month:
                 if current_month != -1:
@@ -174,25 +161,36 @@ def export_data_to_excel(data_str, file_path):
                 month_start_col = c_col
                 current_month = dt.month
                 cell_m = ws.cell(row=4, column=month_start_col, value=f"{dt.year}年{dt.month}月")
+                cell_m.font = font_header
+                cell_m.fill = header_fill
                 cell_m.alignment = align_center
                 
             ws.cell(row=4, column=c_col).border = thin_border
-            ht = is_holiday(dt)
-            if ht:
-                holiday_cols[c_col] = ht
-                if ht == "national":
-                    cell_d.fill = national_holiday_fill
-                    cell_d.font = Font(color="DC3545")
-                else:
-                    cell_d.fill = holiday_fill
-                    cell_d.font = Font(color="6C757D")
+            
+            ht = get_holiday_type(dt)
+            holiday_cols[c_col] = ht
+            if ht == "national":
+                cell_d.fill = fill_national
+                cell_d.font = Font(name='Meiryo', size=9, color="DC3545", bold=True)
+            elif ht == "sun":
+                cell_d.fill = fill_sun
+                cell_d.font = Font(name='Meiryo', size=9, color="DC3545")
+            elif ht == "sat":
+                cell_d.fill = fill_sat
+                cell_d.font = Font(name='Meiryo', size=9, color="0D6EFD")
+            elif ht == "holiday":
+                cell_d.fill = fill_holiday
+                cell_d.font = Font(name='Meiryo', size=9, color="6C757D")
 
         ws.merge_cells(start_row=4, start_column=month_start_col, end_row=4, end_column=cal_start_col + total_days - 1)
 
         current_row = 6
-        bar_coords = {} # 矢印を引くためにバーの座標を記憶
         
-        for task in state.get("tasks", []):
+        # 結合状態を管理するための変数
+        koshu_start_row = 6
+        shubetsu_start_row = 6
+
+        for idx, task in enumerate(state.get("tasks", [])):
             periods = task.get("periods", [])
             max_drow = 0
             for p in periods:
@@ -202,27 +200,53 @@ def export_data_to_excel(data_str, file_path):
             row_span = max_drow + 1
             end_row = current_row + row_span - 1
             
+            # --- 列1: No. ---
             ws.cell(row=current_row, column=1, value=task.get("no", "")).alignment = align_center
-            ws.cell(row=current_row, column=2, value=strip_html_tags(task.get("koshu", ""))).alignment = align_center
-            ws.cell(row=current_row, column=3, value=strip_html_tags(task.get("shubetsu", ""))).alignment = align_center
-            ws.cell(row=current_row, column=4, value=strip_html_tags(task.get("saibetsu", ""))).alignment = align_center
+            if row_span > 1:
+                ws.merge_cells(start_row=current_row, start_column=1, end_row=end_row, end_column=1)
+
+            # --- 列2: 工種 (タスク跨ぎ結合対応) ---
+            is_merge_k = task.get("mergeAboveKoshu", False)
+            if idx == 0 or not is_merge_k:
+                # 前のブロックがあれば結合を確定
+                if current_row > koshu_start_row:
+                    ws.merge_cells(start_row=koshu_start_row, start_column=2, end_row=current_row - 1, end_column=2)
+                koshu_start_row = current_row
+                ws.cell(row=current_row, column=2, value=strip_html_tags(task.get("koshu", ""))).alignment = Alignment(vertical='center', wrap_text=True)
             
+            # --- 列3: 種別 (タスク跨ぎ結合対応) ---
+            is_merge_s = task.get("mergeAboveShubetsu", False)
+            if idx == 0 or not is_merge_s:
+                # 前のブロックがあれば結合を確定
+                if current_row > shubetsu_start_row:
+                    ws.merge_cells(start_row=shubetsu_start_row, start_column=3, end_row=current_row - 1, end_column=3)
+                shubetsu_start_row = current_row
+                ws.cell(row=current_row, column=3, value=strip_html_tags(task.get("shubetsu", ""))).alignment = Alignment(vertical='center', wrap_text=True)
+
+            # --- 列4: 細別・規格 ---
+            ws.cell(row=current_row, column=4, value=strip_html_tags(task.get("saibetsu", ""))).alignment = Alignment(vertical='center', wrap_text=True)
+            if row_span > 1:
+                ws.merge_cells(start_row=current_row, start_column=4, end_row=end_row, end_column=4)
+            
+            # 共通設定（枠線・フォント）
             for c in range(1, 5):
                 for r in range(current_row, end_row + 1):
-                    ws.cell(row=r, column=c).border = thin_border
-                if row_span > 1:
-                    ws.merge_cells(start_row=current_row, start_column=c, end_row=end_row, end_column=c)
+                    cell = ws.cell(row=r, column=c)
+                    cell.border = thin_border
+                    cell.font = font_main
 
+            # カレンダーエリアの処理
             for r in range(current_row, end_row + 1):
+                ws.row_dimensions[r].height = 18
                 for i in range(total_days):
                     c_col = cal_start_col + i
                     cell = ws.cell(row=r, column=c_col)
                     cell.border = thin_border
                     ht = holiday_cols.get(c_col)
-                    if ht == "national":
-                        cell.fill = PatternFill(start_color='FFF1F2', end_color='FFF1F2', fill_type='solid')
-                    elif ht == "holiday":
-                        cell.fill = PatternFill(start_color='F8F9FA', end_color='F8F9FA', fill_type='solid')
+                    if ht == "national": cell.fill = PatternFill(start_color='FFF1F2', end_color='FFF1F2', fill_type='solid')
+                    elif ht == "sun": cell.fill = PatternFill(start_color='FFFAFA', end_color='FFFAFA', fill_type='solid')
+                    elif ht == "sat": cell.fill = PatternFill(start_color='F8FBFF', end_color='F8FBFF', fill_type='solid')
+                    elif ht == "holiday": cell.fill = PatternFill(start_color='F8F9FA', end_color='F8F9FA', fill_type='solid')
                 ws.cell(row=r, column=notes_col).border = thin_border
             
             for p in periods:
@@ -232,80 +256,44 @@ def export_data_to_excel(data_str, file_path):
                     continue
                     
                 drow = p.get("displayRow", 0)
+                progress = p.get("progress", 0)
+                
                 color_code = p.get("color", "#3b82f6").replace("#", "")
-                bar_fill = PatternFill(start_color=color_code, end_color=color_code, fill_type='solid')
+                bar_fill_full = PatternFill(start_color=color_code, end_color=color_code, fill_type='solid')
+                if color_code.lower() in ["3b82f6", "0d6efd"]: # 青系
+                    bar_fill_light = PatternFill(start_color='C6D9FF', end_color='C6D9FF', fill_type='solid')
+                elif color_code.lower() in ["dc3545", "ef4444"]: # 赤系
+                    bar_fill_light = PatternFill(start_color='F8D7DA', end_color='F8D7DA', fill_type='solid')
+                else:
+                    bar_fill_light = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
                 
                 try:
                     p_s = datetime.strptime(start_str, "%Y-%m-%d")
                     p_e = datetime.strptime(end_str, "%Y-%m-%d")
                 except ValueError:
                     continue
-                    
-                start_col = None
-                end_col = None
+                
+                duration = (p_e - p_s).days + 1
+                progress_days = int(duration * (progress / 100.0))
+                
+                day_count = 0
                 for i, dt in enumerate(date_list):
                     if p_s <= dt <= p_e:
+                        day_count += 1
                         c_col = cal_start_col + i
-                        if start_col is None: start_col = c_col
-                        end_col = c_col
                         cell = ws.cell(row=current_row + drow, column=c_col)
-                        cell.fill = bar_fill
-                        
-                if start_col and end_col:
-                    bar_coords[p.get("pid")] = {'r': current_row + drow, 'c_start': start_col, 'c_end': end_col}
-                        
+                        if day_count <= progress_days:
+                            cell.fill = bar_fill_full
+                        else:
+                            cell.fill = bar_fill_light
+                            
             current_row += row_span
 
-        # --- 矢印（依存関係）とクリティカルパスの描画 ---
-        def set_b(ws_obj, r, c, side, line_color, line_style):
-            cell = ws_obj.cell(row=r, column=c)
-            b = cell.border
-            kw = {'left': b.left, 'right': b.right, 'top': b.top, 'bottom': b.bottom}
-            kw[side] = Side(style=line_style, color=line_color)
-            cell.border = Border(**kw)
-
-        for pred, curr in all_edges:
-            is_critical = (pred, curr) in critical_edges
-            line_color = 'DC3545' if is_critical else '000000' # クリティカルパスは赤、通常は黒
-            line_style = 'medium' if is_critical else 'thin'
-            
-            if pred in bar_coords and curr in bar_coords:
-                c_pred = bar_coords[pred]
-                c_curr = bar_coords[curr]
-                r1 = c_pred['r']
-                c1 = c_pred['c_end']
-                r2 = c_curr['r']
-                c2 = c_curr['c_start']
-                
-                if c2 <= c1: 
-                    continue # 逆行はスキップ
-                
-                # 先端に▶を配置
-                if c2 > c1 + 1 or r1 != r2:
-                    head_cell = ws.cell(row=r2, column=c2-1)
-                    head_cell.value = "▶"
-                    head_cell.font = Font(color=line_color, size=8)
-                    head_cell.alignment = Alignment(horizontal='right', vertical='center')
-
-                # 罫線による矢印経路の描画
-                if r2 > r1: 
-                    for r in range(r1, r2):
-                        set_b(ws, r, c1, 'right', line_color, line_style)
-                    for c in range(c1+1, c2-1):
-                        set_b(ws, r2-1, c, 'bottom', line_color, line_style)
-                    set_b(ws, r2-1, c1, 'bottom', line_color, line_style) 
-                elif r2 < r1: 
-                    for r in range(r2, r1+1):
-                        set_b(ws, r, c1, 'right', line_color, line_style)
-                    for c in range(c1+1, c2-1):
-                        set_b(ws, r2-1, c, 'bottom', line_color, line_style)
-                    set_b(ws, r2-1, c1, 'bottom', line_color, line_style)
-                else: 
-                    for c in range(c1+1, c2-1):
-                        cell = ws.cell(row=r1, column=c)
-                        cell.value = "ー"
-                        cell.font = Font(color=line_color, size=8, bold=True)
-                        cell.alignment = Alignment(horizontal='center', vertical='center')
+        # 最後に工種・種別の結合を確定（全タスク終了後）
+        if current_row > koshu_start_row:
+            ws.merge_cells(start_row=koshu_start_row, start_column=2, end_row=current_row - 1, end_column=2)
+        if current_row > shubetsu_start_row:
+            ws.merge_cells(start_row=shubetsu_start_row, start_column=3, end_row=current_row - 1, end_column=3)
 
         if current_row > 6:
             notes_text = strip_html_tags(state.get("notes", ""))
@@ -314,32 +302,51 @@ def export_data_to_excel(data_str, file_path):
             ws.merge_cells(start_row=6, start_column=notes_col, end_row=current_row - 1, end_column=notes_col)
 
         tab_notes = daily_data.get(tab_id, {})
+        tab_merges = state.get("dailyNotesMerges", {}).get(tab_id, {})
+        
         ws.cell(row=current_row, column=1, value=tab_name).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         for c in range(1, 5):
             ws.cell(row=current_row, column=c).border = thin_border
         ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
         
-        max_lines = 1
+        # 日報備考欄の高さをご指定の150ポイントに固定
+        ws.row_dimensions[current_row].height = 150
+        
+        skip_count = 0
         for i, dt in enumerate(date_list):
+            if skip_count > 0:
+                skip_count -= 1
+                continue
+                
             c_col = cal_start_col + i
             date_str = dt.strftime("%Y-%m-%d")
             month_str = f"{dt.year}-{dt.month:02d}"
+            
+            colspan = tab_merges.get(date_str, 1)
             
             note_html = tab_notes.get(date_str, "")
             if not note_html and dt.day == 1:
                 note_html = tab_notes.get(month_str, "")
                 
             note_text = strip_html_tags(note_html)
-            lines = note_text.count('\n') + 1
-            if lines > max_lines:
-                max_lines = lines
                 
             cell = ws.cell(row=current_row, column=c_col, value=note_text)
             cell.border = thin_border
+            # 縦書き（255はExcelの縦書き指定）かつ上揃え、中央揃え
             cell.alignment = Alignment(vertical='top', horizontal='center', wrap_text=True, textRotation=255)
+            
+            if colspan > 1:
+                # 結合範囲がカレンダーの末尾を超えないように調整
+                actual_colspan = min(colspan, total_days - i)
+                ws.merge_cells(start_row=current_row, start_column=c_col, end_row=current_row, end_column=c_col + actual_colspan - 1)
+                
+                # 結合されたセルの枠線を引く
+                for c_offset in range(actual_colspan):
+                    ws.cell(row=current_row, column=c_col + c_offset).border = thin_border
+                    
+                skip_count = actual_colspan - 1
         
         ws.cell(row=current_row, column=notes_col).border = thin_border
-        ws.row_dimensions[current_row].height = max_lines * 15 + 40
 
     try:
         wb.save(file_path)

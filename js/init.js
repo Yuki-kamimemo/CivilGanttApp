@@ -122,6 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 初回描画後に列リサイズ機能を初期化
         requestAnimationFrame(setupTableResizing);
+        // 初期化完了後は未保存フラグをリセット
+        window.isDirty = false;
     };
 
     window.addEventListener('pywebviewready', async function () {
