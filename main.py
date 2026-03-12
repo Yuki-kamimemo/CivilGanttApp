@@ -280,6 +280,20 @@ class Api:
                     return False
         return False
 
+    def open_manual(self):
+        """別ウィンドウで操作マニュアルを表示する"""
+        manual_path = get_resource_path('manual.html')
+        if os.path.exists(manual_path):
+            webview.create_window(
+                'Civil Schedule Master - 操作マニュアル',
+                url=manual_path,
+                width=1000,
+                height=800
+            )
+        else:
+            if self._window:
+                self._window.evaluate_js("alert('マニュアルファイル(manual.html)が見つかりません。')")
+
 def get_resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
