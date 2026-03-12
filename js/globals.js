@@ -86,6 +86,7 @@ window.createDefaultState = function () {
         ],
         activeDailyNoteTab: 'tab_general',
         dailyNotesData: { 'tab_general': {}, 'tab_safety': {} },
+        dailyNotesMerges: { 'tab_general': {}, 'tab_safety': {} },
         holidays: { sundays: true, saturdays: false, nationalHolidays: true, custom: [] },
         tasks: [
             {

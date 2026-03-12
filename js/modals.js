@@ -596,6 +596,17 @@ window.showContextMenu = function (e, title, type, data) {
             ${mergeActions}
             <div class="menu-action-item delete-action" onclick="window.handleContextAction('delete_task')">この行を削除</div>
         `;
+    } else if (type === 'daily_note_cell') {
+        let mergeActions = '';
+        if (!data.isMerged) {
+            mergeActions = `<div class="menu-action-item" onclick="window.handleContextAction('merge_daily_right')">右のセルと結合</div>`;
+        } else {
+            mergeActions = `
+                <div class="menu-action-item" onclick="window.handleContextAction('merge_daily_right')">右にさらに1セル追加</div>
+                <div class="menu-action-item delete-action" onclick="window.handleContextAction('unmerge_daily')">結合を解除</div>
+            `;
+        }
+        actions.innerHTML = mergeActions;
     } else if (type === 'text') {
         actions.innerHTML = `
             <div class="menu-action-item" onclick="window.handleContextAction('edit_text')">テキストを編集</div>
@@ -683,6 +694,10 @@ window.handleContextAction = function (action) {
             state.texts = state.texts.filter(t => t.id !== targetTextId);
             window.saveStateToHistory(); renderAll();
         });
+    } else if (action === 'merge_daily_right') {
+        window.handleDailyNoteMerge('merge_right', currentItem.dateStr);
+    } else if (action === 'unmerge_daily') {
+        window.handleDailyNoteMerge('unmerge', currentItem.dateStr);
     }
 
     selectedItem = null;

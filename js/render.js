@@ -112,19 +112,38 @@ function renderDailyNotes() {
 
     if (!state.displayStart || !state.displayEnd) return;
     const tabData = state.dailyNotesData[state.activeDailyNoteTab] || {};
+    const merges = (state.dailyNotesMerges && state.dailyNotesMerges[state.activeDailyNoteTab]) || {};
 
-    let currentDate = new Date(state.displayStart);
-    const endDate = new Date(state.displayEnd);
+    // 全セルキーのリストを事前に作成（結合スキップ処理のため）
+    const allCellKeys = [];
+    if (state.viewScale === 'day') {
+        let d = new Date(state.displayStart);
+        const end = new Date(state.displayEnd);
+        while (d <= end) {
+            allCellKeys.push({ key: formatDate(d), dateObj: new Date(d) });
+            d.setDate(d.getDate() + 1);
+        }
+    } else if (state.viewScale === 'month') {
+        let d = new Date(new Date(state.displayStart).getFullYear(), new Date(state.displayStart).getMonth(), 1);
+        const end = new Date(new Date(state.displayEnd).getFullYear(), new Date(state.displayEnd).getMonth(), 1);
+        while (d <= end) {
+            const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            allCellKeys.push({ key, dateObj: new Date(d) });
+            d.setMonth(d.getMonth() + 1);
+        }
+    }
+
     let totalWidth = 0;
 
     const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
     const vAlignMap = { 'flex-start': 'flex-start', 'center': 'center', 'flex-end': 'flex-end' };
 
-    const drawCell = (dateStr, dateObj, widthPx) => {
+    const drawCell = (dateStr, dateObj, widthPx, isMerged = false) => {
         const cell = document.createElement('div');
-        cell.className = 'daily-note-cell';
+        cell.className = 'daily-note-cell' + (isMerged ? ' daily-note-cell--merged' : '');
         cell.style.width = widthPx + 'px';
         cell.style.minWidth = widthPx + 'px';
+        cell.dataset.dateStr = dateStr;
 
         const textarea = document.createElement('div');
         // Quillの仕様にあわせたセルスタイル
@@ -189,25 +208,34 @@ function renderDailyNotes() {
             }
         });
 
+        // 右クリックで結合メニューを表示
+        cell.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const tabId = state.activeDailyNoteTab;
+            const currentMerges = (state.dailyNotesMerges && state.dailyNotesMerges[tabId]) || {};
+            const currentColspan = currentMerges[dateStr] || 1;
+            window.showContextMenu(e, '備考セル', 'daily_note_cell', {
+                dateStr,
+                isMerged: currentColspan > 1
+            });
+        });
+
         cell.appendChild(textarea);
         grid.appendChild(cell);
         totalWidth += widthPx;
     };
 
-    if (state.viewScale === 'day') {
-        while (currentDate <= endDate) {
-            drawCell(formatDate(currentDate), currentDate, CELL_WIDTH_DAY);
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-    } else if (state.viewScale === 'month') {
-        let curMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-        while (curMonth <= endMonth) {
-            const monthStr = curMonth.getFullYear() + '-' + String(curMonth.getMonth() + 1).padStart(2, '0');
-            drawCell(monthStr, curMonth, CELL_WIDTH_MONTH);
-            curMonth.setMonth(curMonth.getMonth() + 1);
-        }
-    }
+    const baseWidth = state.viewScale === 'day' ? CELL_WIDTH_DAY : CELL_WIDTH_MONTH;
+    let skipCount = 0;
+    allCellKeys.forEach(({ key, dateObj }, idx) => {
+        if (skipCount > 0) { skipCount--; return; }
+        const colspan = merges[key] || 1;
+        const actualColspan = Math.min(colspan, allCellKeys.length - idx);
+        drawCell(key, dateObj, baseWidth * actualColspan, actualColspan > 1);
+        if (actualColspan > 1) skipCount = actualColspan - 1;
+    });
+
     grid.style.width = totalWidth + 'px';
 }
 

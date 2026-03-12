@@ -126,12 +126,19 @@ function applyLoadedData(parsedData) {
             dailyNoteTabs: [{ id: 'tab_general', name: '作業全般・天候' }],
             activeDailyNoteTab: 'tab_general',
             dailyNotesData: { 'tab_general': {} },
+            dailyNotesMerges: { 'tab_general': {} },
             holidays: { sundays: true, saturdays: false, nationalHolidays: true, custom: [] },
             autoCreateBar: true, texts: [], shapes: [],
             globalFontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
             globalFontSize: 13
         };
         state = { ...defaultState, ...parsedData };
+
+        // 古いデータ互換: dailyNotesMerges が undefined の場合に補完
+        if (!state.dailyNotesMerges) state.dailyNotesMerges = {};
+        state.dailyNoteTabs.forEach(tab => {
+            if (!state.dailyNotesMerges[tab.id]) state.dailyNotesMerges[tab.id] = {};
+        });
 
         window.saveStateToHistory(); renderAll();
     } else {
@@ -329,6 +336,7 @@ window.addDailyTab = function () {
             const id = 'tab_' + generateId();
             state.dailyNoteTabs.push({ id, name });
             state.dailyNotesData[id] = {};
+            state.dailyNotesMerges[id] = {};
             state.activeDailyNoteTab = id;
             window.saveStateToHistory(); renderAll();
         }
@@ -347,10 +355,27 @@ window.deleteCurrentDailyTab = function () {
         const id = state.activeDailyNoteTab;
         state.dailyNoteTabs = state.dailyNoteTabs.filter(t => t.id !== id);
         delete state.dailyNotesData[id];
+        delete state.dailyNotesMerges[id];
         state.activeDailyNoteTab = state.dailyNoteTabs[0].id;
         window.saveStateToHistory(); renderAll();
     });
 };
+window.handleDailyNoteMerge = function (action, startDateStr) {
+    const tabId = state.activeDailyNoteTab;
+    if (!state.dailyNotesMerges[tabId]) state.dailyNotesMerges[tabId] = {};
+    const merges = state.dailyNotesMerges[tabId];
+
+    if (action === 'merge_right') {
+        const current = merges[startDateStr] || 1;
+        merges[startDateStr] = current + 1;
+    } else if (action === 'unmerge') {
+        delete merges[startDateStr];
+    }
+
+    window.saveStateToHistory();
+    renderAll();
+};
+
 window.handleDailyNoteChange = function (dateStr, value) {
     const tabId = state.activeDailyNoteTab;
     if (!state.dailyNotesData[tabId]) state.dailyNotesData[tabId] = {};
